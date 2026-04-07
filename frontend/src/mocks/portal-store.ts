@@ -1,4 +1,4 @@
-import { adminPrinters, listAdminQueues } from './admin-data'
+import { adminPrinters, listAdminQueues } from './admin-store'
 import type { PortalPrintJob, PortalQueueOption, PortalSubmissionDraft, PortalUserProfile } from '../types/portal'
 
 export const portalUserProfile: PortalUserProfile = {

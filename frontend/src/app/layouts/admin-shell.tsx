@@ -18,7 +18,7 @@ import {
   Users,
 } from 'lucide-react'
 import { NavLink, useLocation, useOutlet } from 'react-router-dom'
-import { cn } from '../../lib/utils'
+import { cn } from '@/lib/utils'
 
 const navItems = [
   { label: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },

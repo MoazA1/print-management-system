@@ -15,31 +15,8 @@ import { ActionRail } from '../components/ui/action-rail'
 import { AdvancedFilterPanel } from '../components/ui/advanced-filter-panel'
 import { DataTable } from '../components/ui/data-table'
 import { PageHeader } from '../components/ui/page-header'
-import { adminPrinters, adminUsers } from '../data/admin-data'
-
-const trendValues = [180, 45, 20, 95, 170, 145, 205, 210, 120, 18, 25, 260, 190, 680, 90, 12, 32, 260, 82, 12, 18, 590, 70, 205, 15, 80]
-const trendLabels = ['01', '03', '05', '07', '09', '11', '13', '15', '17', '19', '21', '23']
-
-const recentPrintRows = [
-  { id: 'dash-log-01', user: 'john.smith', device: 'Printer A1', pages: 25, status: 'Completed' },
-  { id: 'dash-log-02', user: 'emma.wilson', device: 'Printer D1', pages: 12, status: 'Held' },
-  { id: 'dash-log-03', user: 'michael.brown', device: 'Printer B2', pages: 44, status: 'Completed' },
-  { id: 'dash-log-04', user: 'lisa.anderson', device: 'Printer C3', pages: 8, status: 'Failed' },
-]
-
-function linePoints(values: number[], width: number, height: number) {
-  const max = Math.max(...values)
-  const min = Math.min(...values)
-  const range = Math.max(max - min, 1)
-
-  return values
-    .map((value, index) => {
-      const x = (index / (values.length - 1)) * width
-      const y = height - ((value - min) / range) * height
-      return `${x},${y}`
-    })
-    .join(' ')
-}
+import { getDashboardSnapshot } from '../features/admin/dashboard/api'
+import { buildLinePoints } from '../lib/charts'
 
 function SummaryStat({
   label,
@@ -102,6 +79,7 @@ function StatusRow({
 }
 
 export function DashboardPage() {
+  const { adminPrinters, adminUsers, recentPrintRows, trendLabels, trendValues } = getDashboardSnapshot()
   const [dateRange, setDateRange] = useState('Last 7 days')
   const [department, setDepartment] = useState('All departments')
   const [device, setDevice] = useState('All devices')
@@ -191,12 +169,12 @@ export function DashboardPage() {
                 ))}
                 <polyline
                   fill="none"
-                  points={linePoints(trendValues, 760, 260)}
+                  points={buildLinePoints(trendValues, 760, 260)}
                   transform="translate(0 20)"
                   stroke="#43a047"
                   strokeWidth="3"
                 />
-                {linePoints(trendValues, 760, 260)
+                {buildLinePoints(trendValues, 760, 260)
                   .split(' ')
                   .map((point, index) => {
                     const [x, y] = point.split(',').map(Number)

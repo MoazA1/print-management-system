@@ -7,10 +7,11 @@ import { DataTable } from '../components/ui/data-table'
 import { FilterBar } from '../components/ui/filter-bar'
 import { PageHeader } from '../components/ui/page-header'
 import { StatusBadge } from '../components/ui/status-badge'
-import { adminUsers, getUserById } from '../data/admin-data'
+import { getUserByIdOrUndefined, listUsers } from '../features/admin/users/api'
 import type { AdminUser } from '../types/admin'
 
 export function UsersPage() {
+  const adminUsers = listUsers()
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [scope, setScope] = useState<'All' | 'Active' | 'Suspended'>('All')
@@ -33,7 +34,7 @@ export function UsersPage() {
       const matchesGroup = groupFilter === 'All groups' ? true : user.groups.includes(groupFilter)
       return matchesSearch && matchesScope && matchesDepartment && matchesRole && matchesGroup
     })
-  }, [deferredSearch, scope, department, role, groupFilter])
+  }, [adminUsers, deferredSearch, scope, department, role, groupFilter])
 
   return (
     <div className="min-w-0">
@@ -161,7 +162,7 @@ export function UsersPage() {
 
 export function UserDetailPage() {
   const { userId } = useParams()
-  const user = getUserById(userId)
+  const user = getUserByIdOrUndefined(userId)
 
   if (!user) {
     return <Navigate to="/admin/users" replace />

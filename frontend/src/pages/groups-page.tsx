@@ -5,10 +5,11 @@ import { ActionRail } from '../components/ui/action-rail'
 import { DataTable } from '../components/ui/data-table'
 import { FilterBar } from '../components/ui/filter-bar'
 import { PageHeader } from '../components/ui/page-header'
-import { adminGroups, getGroupById } from '../data/admin-data'
+import { getGroupByIdOrUndefined, listGroups } from '../features/admin/groups/api'
 import type { AdminGroup } from '../types/admin'
 
 export function GroupsPage() {
+  const adminGroups = listGroups()
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const deferredSearch = useDeferredValue(search)
@@ -20,7 +21,7 @@ export function GroupsPage() {
         value.toLowerCase().includes(query),
       ),
     )
-  }, [deferredSearch])
+  }, [adminGroups, deferredSearch])
 
   return (
     <div className="min-w-0">
@@ -92,7 +93,7 @@ export function GroupsPage() {
 
 export function GroupDetailPage() {
   const { groupId } = useParams()
-  const group = getGroupById(groupId)
+  const group = getGroupByIdOrUndefined(groupId)
 
   if (!group) {
     return <Navigate to="/admin/groups" replace />

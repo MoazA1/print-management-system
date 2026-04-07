@@ -1,0 +1,6 @@
+export { AccountsPage as AccountsScreen } from '@/pages/system-pages'
+export { DevicesPage as DevicesScreen } from '@/pages/system-pages'
+export { ReportsPage as ReportsScreen } from '@/pages/system-pages'
+export { OptionsPage as OptionsScreen } from '@/pages/system-pages'
+export { LogsPage as LogsScreen } from '@/pages/system-pages'
+export { AboutPage as AboutScreen } from '@/pages/system-pages'

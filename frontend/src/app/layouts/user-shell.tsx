@@ -8,8 +8,8 @@ import {
   Upload,
 } from 'lucide-react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { portalUserProfile } from '../../data/portal-data'
-import { cn } from '../../lib/utils'
+import { cn } from '@/lib/utils'
+import { getCurrentPortalUserProfile } from '@/features/portal/session/api'
 
 const portalNavItems = [
   { label: 'Dashboard', href: '/portal/dashboard', icon: LayoutDashboard },
@@ -19,6 +19,7 @@ const portalNavItems = [
 
 export function UserShell() {
   const location = useLocation()
+  const portalUserProfile = getCurrentPortalUserProfile()
   const sectionTitle =
     portalNavItems.find((item) => location.pathname.startsWith(item.href))?.label ?? 'Portal'
 

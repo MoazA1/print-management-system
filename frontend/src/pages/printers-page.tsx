@@ -7,10 +7,11 @@ import { FilterBar } from '../components/ui/filter-bar'
 import { PageHeader } from '../components/ui/page-header'
 import { SectionTabs } from '../components/ui/section-tabs'
 import { StatusBadge } from '../components/ui/status-badge'
-import { adminPrinters, getPrinterById, listAdminQueues } from '../data/admin-data'
+import { getPrinterByIdOrUndefined, listPrinterQueueNames, listPrinters } from '../features/admin/printers/api'
 import type { AdminPrinter } from '../types/admin'
 
 export function PrintersPage() {
+  const adminPrinters = listPrinters()
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const deferredSearch = useDeferredValue(search)
@@ -22,7 +23,7 @@ export function PrintersPage() {
         value.toLowerCase().includes(query),
       ),
     )
-  }, [deferredSearch])
+  }, [adminPrinters, deferredSearch])
 
   return (
     <div className="min-w-0">
@@ -100,9 +101,9 @@ export function PrintersPage() {
 
 export function PrinterDetailPage() {
   const { printerId } = useParams()
-  const printer = getPrinterById(printerId)
+  const printer = getPrinterByIdOrUndefined(printerId)
   const [activeTab, setActiveTab] = useState('Summary')
-  const queueOptions = ['Unassigned', ...new Set(listAdminQueues().map((queue) => queue.name))]
+  const queueOptions = listPrinterQueueNames()
 
   if (!printer) {
     return <Navigate to="/admin/printers" replace />

@@ -29,6 +29,21 @@
 
 @layer base {
   :root {
+    --background: #f5f7fa;
+    --foreground: #08111d;
+    --border: #dbe4ec;
+    --input: #dbe4ec;
+    --ring: rgba(15, 122, 75, 0.18);
+    --primary: #08111d;
+    --primary-foreground: #ffffff;
+    --secondary: #ffffff;
+    --secondary-foreground: #08111d;
+    --muted: #f9fbfc;
+    --muted-foreground: #59718e;
+    --accent: #e9f7ef;
+    --accent-foreground: #0f7a4b;
+    --destructive: #c84f4f;
+    --destructive-foreground: #ffffff;
     color: #08111d;
     background: #f5f7fa;
     font-family: var(--font-sans);
