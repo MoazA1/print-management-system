@@ -6,6 +6,7 @@ interface ActionItem {
   hint?: string
   tone?: 'default' | 'danger'
   icon: LucideIcon
+  onClick?: () => void
 }
 
 interface ActionRailProps {
@@ -24,6 +25,8 @@ export function ActionRail({ title, items }: ActionRailProps) {
         {items.map((item) => (
           <button
             key={item.label}
+            type="button"
+            onClick={item.onClick}
             className={cn(
               'flex min-h-22 w-full items-start gap-3 bg-white px-5 py-4 text-left transition hover:bg-mist-50',
               item.tone === 'danger' ? 'text-danger-500' : 'text-ink-950',

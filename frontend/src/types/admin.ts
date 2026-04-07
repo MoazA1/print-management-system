@@ -54,3 +54,43 @@ export interface AdminPrinter {
   serialNumber: string
   notes: string
 }
+
+export type QueueAccessScope = 'Students' | 'Staff' | 'Faculty' | 'Mixed'
+export type QueueReleaseMode = 'Secure Release' | 'Immediate' | 'Kiosk Release'
+export type QueueColorMode = 'Black & White' | 'Color'
+export type QueueLogType = 'Release' | 'Routing' | 'Policy' | 'Error'
+export type QueueLogState = 'Info' | 'Open' | 'Resolved'
+
+export interface QueueLogEntry {
+  id: string
+  time: string
+  type: QueueLogType
+  state: QueueLogState
+  actor: string
+  message: string
+}
+
+export interface AdminQueue {
+  id: string
+  name: string
+  description: string
+  hostedOn: string
+  status: 'Online' | 'Offline' | 'Maintenance'
+  enabled: boolean
+  releaseMode: QueueReleaseMode
+  audience: QueueAccessScope
+  department: string
+  allowedGroups: string[]
+  colorMode: QueueColorMode
+  defaultDuplex: boolean
+  costPerPage: number
+  printerIds: string[]
+  pendingJobs: number
+  heldJobs: number
+  releasedToday: number
+  lastActivity: string
+  autoDeleteAfterHours: number
+  failureMode: 'Hold until redirected' | 'Retry then notify' | 'Cancel and notify'
+  notes: string
+  queueLogs: QueueLogEntry[]
+}

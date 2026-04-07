@@ -7,7 +7,7 @@ import { FilterBar } from '../components/ui/filter-bar'
 import { PageHeader } from '../components/ui/page-header'
 import { SectionTabs } from '../components/ui/section-tabs'
 import { StatusBadge } from '../components/ui/status-badge'
-import { adminPrinters, getPrinterById } from '../data/admin-data'
+import { adminPrinters, getPrinterById, listAdminQueues } from '../data/admin-data'
 import type { AdminPrinter } from '../types/admin'
 
 export function PrintersPage() {
@@ -102,6 +102,7 @@ export function PrinterDetailPage() {
   const { printerId } = useParams()
   const printer = getPrinterById(printerId)
   const [activeTab, setActiveTab] = useState('Summary')
+  const queueOptions = ['Unassigned', ...new Set(listAdminQueues().map((queue) => queue.name))]
 
   if (!printer) {
     return <Navigate to="/admin/printers" replace />
@@ -175,10 +176,9 @@ export function PrinterDetailPage() {
                 <label>
                   <div className="ui-heading">Queue type</div>
                   <select className="ui-select mt-2 w-full" defaultValue={printer.queue}>
-                    <option>Student Standard</option>
-                    <option>Student Color</option>
-                    <option>Faculty Color</option>
-                    <option>Project Studio</option>
+                    {queueOptions.map((queueName) => (
+                      <option key={queueName}>{queueName}</option>
+                    ))}
                   </select>
                 </label>
               </div>

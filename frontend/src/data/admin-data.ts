@@ -1,4 +1,4 @@
-import type { AdminGroup, AdminPrinter, AdminUser } from '../types/admin'
+import type { AdminGroup, AdminPrinter, AdminQueue, AdminUser, QueueLogEntry } from '../types/admin'
 
 export const adminUsers: AdminUser[] = [
   {
@@ -155,6 +155,18 @@ export const adminGroups: AdminGroup[] = [
     owner: 'IT Operations',
   },
   {
+    id: 'grp-05',
+    name: 'Administrators',
+    description: 'Full administrative access for policy changes, queue controls, and protected operations.',
+    userCount: 4,
+    quotaPerPeriod: 10000,
+    schedule: 'Monthly',
+    studentRestricted: false,
+    newUserQuota: 10000,
+    defaultForNewUsers: false,
+    owner: 'IT Operations',
+  },
+  {
     id: 'grp-04',
     name: 'AI Lab',
     description: 'Dedicated research queue access with moderate monthly quota.',
@@ -251,6 +263,300 @@ export const adminPrinters: AdminPrinter[] = [
   },
 ]
 
+const queueSeedData: AdminQueue[] = [
+  {
+    id: 'que-01',
+    name: 'Student Standard',
+    description: 'Primary held queue for student black-and-white jobs across the main campus fleet.',
+    hostedOn: 'ccm-print-queue-01',
+    status: 'Online',
+    enabled: true,
+    releaseMode: 'Secure Release',
+    audience: 'Students',
+    department: 'General Access',
+    allowedGroups: ['CCM-Students'],
+    colorMode: 'Black & White',
+    defaultDuplex: true,
+    costPerPage: 0.05,
+    printerIds: ['prt-01'],
+    pendingJobs: 7,
+    heldJobs: 18,
+    releasedToday: 54,
+    lastActivity: 'Today 09:41',
+    autoDeleteAfterHours: 24,
+    failureMode: 'Hold until redirected',
+    notes: 'Default student queue with secure release enabled and duplex set as the default policy.',
+    queueLogs: [
+      {
+        id: 'que-01-log-01',
+        time: '2026-04-06 09:41',
+        type: 'Release',
+        state: 'Info',
+        actor: 'system',
+        message: '27 held jobs released successfully during the morning rush window.',
+      },
+      {
+        id: 'que-01-log-02',
+        time: '2026-04-06 08:52',
+        type: 'Policy',
+        state: 'Resolved',
+        actor: 'david.admin',
+        message: 'Retention policy confirmed at 24 hours for unreleased jobs.',
+      },
+      {
+        id: 'que-01-log-03',
+        time: '2026-04-06 08:16',
+        type: 'Routing',
+        state: 'Info',
+        actor: 'system',
+        message: 'Queue linked to Printer A1 after overnight service health check.',
+      },
+    ],
+  },
+  {
+    id: 'que-02',
+    name: 'Faculty Color',
+    description: 'Faculty-facing secure release queue for color handouts, proposals, and meeting packs.',
+    hostedOn: 'ccm-print-queue-02',
+    status: 'Online',
+    enabled: true,
+    releaseMode: 'Secure Release',
+    audience: 'Faculty',
+    department: 'Academic Affairs',
+    allowedGroups: ['Faculty'],
+    colorMode: 'Color',
+    defaultDuplex: true,
+    costPerPage: 0.2,
+    printerIds: ['prt-02'],
+    pendingJobs: 2,
+    heldJobs: 5,
+    releasedToday: 21,
+    lastActivity: 'Today 09:18',
+    autoDeleteAfterHours: 24,
+    failureMode: 'Retry then notify',
+    notes: 'Used for color-intensive academic printing with technician review when retries exceed threshold.',
+    queueLogs: [
+      {
+        id: 'que-02-log-01',
+        time: '2026-04-06 09:18',
+        type: 'Release',
+        state: 'Info',
+        actor: 'system',
+        message: '5 faculty jobs released on Printer B2 without quota exceptions.',
+      },
+      {
+        id: 'que-02-log-02',
+        time: '2026-04-06 08:43',
+        type: 'Policy',
+        state: 'Info',
+        actor: 'david.admin',
+        message: 'Color page rate confirmed at SAR 0.20 for the spring term.',
+      },
+      {
+        id: 'que-02-log-03',
+        time: '2026-04-06 07:58',
+        type: 'Routing',
+        state: 'Resolved',
+        actor: 'sarah.tech',
+        message: 'Queue assignment revalidated after device firmware sync.',
+      },
+    ],
+  },
+  {
+    id: 'que-03',
+    name: 'Project Studio',
+    description: 'Restricted studio queue for project work that needs manual review during printer faults.',
+    hostedOn: 'ccm-print-queue-03',
+    status: 'Maintenance',
+    enabled: true,
+    releaseMode: 'Secure Release',
+    audience: 'Mixed',
+    department: 'Project Studio',
+    allowedGroups: ['AI Lab', 'Faculty'],
+    colorMode: 'Color',
+    defaultDuplex: false,
+    costPerPage: 0.14,
+    printerIds: ['prt-03'],
+    pendingJobs: 5,
+    heldJobs: 11,
+    releasedToday: 12,
+    lastActivity: 'Today 08:11',
+    autoDeleteAfterHours: 24,
+    failureMode: 'Hold until redirected',
+    notes: 'Jobs remain held during maintenance so technicians can redirect work instead of discarding it.',
+    queueLogs: [
+      {
+        id: 'que-03-log-01',
+        time: '2026-04-06 08:11',
+        type: 'Error',
+        state: 'Open',
+        actor: 'system',
+        message: 'Printer C3 entered maintenance mode after repeated feed alerts.',
+      },
+      {
+        id: 'que-03-log-02',
+        time: '2026-04-06 08:09',
+        type: 'Routing',
+        state: 'Open',
+        actor: 'sarah.tech',
+        message: '11 held jobs flagged for manual redirect instead of auto-cancel.',
+      },
+      {
+        id: 'que-03-log-03',
+        time: '2026-04-05 16:27',
+        type: 'Policy',
+        state: 'Resolved',
+        actor: 'david.admin',
+        message: 'Project Studio queue kept separate from student traffic due to color budget limits.',
+      },
+    ],
+  },
+  {
+    id: 'que-04',
+    name: 'Student Color',
+    description: 'Library-facing student color queue with higher exception volume during device outages.',
+    hostedOn: 'ccm-print-queue-01',
+    status: 'Offline',
+    enabled: false,
+    releaseMode: 'Secure Release',
+    audience: 'Students',
+    department: 'Library',
+    allowedGroups: ['CCM-Students'],
+    colorMode: 'Color',
+    defaultDuplex: false,
+    costPerPage: 0.12,
+    printerIds: ['prt-04'],
+    pendingJobs: 11,
+    heldJobs: 9,
+    releasedToday: 0,
+    lastActivity: 'Today 07:54',
+    autoDeleteAfterHours: 24,
+    failureMode: 'Cancel and notify',
+    notes: 'Currently disabled while Library network work is in progress. Held jobs still require admin review.',
+    queueLogs: [
+      {
+        id: 'que-04-log-01',
+        time: '2026-04-06 07:54',
+        type: 'Error',
+        state: 'Open',
+        actor: 'system',
+        message: 'Student Color disabled automatically after Printer D1 went offline.',
+      },
+      {
+        id: 'que-04-log-02',
+        time: '2026-04-06 07:51',
+        type: 'Routing',
+        state: 'Open',
+        actor: 'system',
+        message: '9 unreleased jobs kept in queue to avoid silent loss during outage.',
+      },
+      {
+        id: 'que-04-log-03',
+        time: '2026-04-05 18:22',
+        type: 'Policy',
+        state: 'Info',
+        actor: 'david.admin',
+        message: 'Library queue marked as student-only with color printing enabled.',
+      },
+    ],
+  },
+  {
+    id: 'que-05',
+    name: 'Staff Overflow',
+    description: 'Overflow queue for staff and technician jobs when the main office printer is unavailable.',
+    hostedOn: 'ccm-print-queue-04',
+    status: 'Online',
+    enabled: true,
+    releaseMode: 'Immediate',
+    audience: 'Staff',
+    department: 'Operations',
+    allowedGroups: ['Technicians', 'Administrators'],
+    colorMode: 'Black & White',
+    defaultDuplex: true,
+    costPerPage: 0.04,
+    printerIds: [],
+    pendingJobs: 0,
+    heldJobs: 0,
+    releasedToday: 0,
+    lastActivity: 'Yesterday 16:40',
+    autoDeleteAfterHours: 24,
+    failureMode: 'Retry then notify',
+    notes: 'Safe candidate for deletion because no active or held jobs remain.',
+    queueLogs: [
+      {
+        id: 'que-05-log-01',
+        time: '2026-04-05 16:40',
+        type: 'Routing',
+        state: 'Resolved',
+        actor: 'sarah.tech',
+        message: 'Temporary printer link removed after office fleet stabilized.',
+      },
+      {
+        id: 'que-05-log-02',
+        time: '2026-04-05 14:05',
+        type: 'Policy',
+        state: 'Info',
+        actor: 'david.admin',
+        message: 'Queue kept available as an overflow path for operations staff.',
+      },
+    ],
+  },
+]
+
+function cloneQueueLogEntry(entry: QueueLogEntry): QueueLogEntry {
+  return { ...entry }
+}
+
+function cloneAdminQueue(queue: AdminQueue): AdminQueue {
+  return {
+    ...queue,
+    allowedGroups: [...queue.allowedGroups],
+    printerIds: [...queue.printerIds],
+    queueLogs: queue.queueLogs.map(cloneQueueLogEntry),
+  }
+}
+
+let adminQueuesData = queueSeedData.map(cloneAdminQueue)
+
+function normalizeQueueAssignments(targetQueue: AdminQueue) {
+  const claimedPrinterIds = new Set(targetQueue.printerIds)
+
+  adminQueuesData = adminQueuesData.map((queue) => {
+    if (queue.id === targetQueue.id) {
+      return cloneAdminQueue(targetQueue)
+    }
+
+    if (claimedPrinterIds.size === 0) {
+      return queue
+    }
+
+    return {
+      ...queue,
+      printerIds: queue.printerIds.filter((printerId) => !claimedPrinterIds.has(printerId)),
+      allowedGroups: [...queue.allowedGroups],
+      queueLogs: queue.queueLogs.map(cloneQueueLogEntry),
+    }
+  })
+}
+
+function syncPrinterQueueAssignments() {
+  const assignedQueueNames = new Map<string, string>()
+
+  adminQueuesData.forEach((queue) => {
+    queue.printerIds.forEach((printerId) => {
+      if (!assignedQueueNames.has(printerId)) {
+        assignedQueueNames.set(printerId, queue.name)
+      }
+    })
+  })
+
+  adminPrinters.forEach((printer) => {
+    printer.queue = assignedQueueNames.get(printer.id) ?? 'Unassigned'
+  })
+}
+
+syncPrinterQueueAssignments()
+
 export function getUserById(userId?: string) {
   return adminUsers.find((user) => user.id === userId)
 }
@@ -261,4 +567,45 @@ export function getGroupById(groupId?: string) {
 
 export function getPrinterById(printerId?: string) {
   return adminPrinters.find((printer) => printer.id === printerId)
+}
+
+export function listAdminQueues() {
+  return adminQueuesData.map(cloneAdminQueue)
+}
+
+export function getQueueById(queueId?: string) {
+  const queue = adminQueuesData.find((item) => item.id === queueId)
+  return queue ? cloneAdminQueue(queue) : undefined
+}
+
+export function createAdminQueue(queue: AdminQueue) {
+  const nextQueue = cloneAdminQueue(queue)
+  adminQueuesData = [nextQueue, ...adminQueuesData]
+  normalizeQueueAssignments(nextQueue)
+  syncPrinterQueueAssignments()
+  return cloneAdminQueue(nextQueue)
+}
+
+export function updateAdminQueue(queue: AdminQueue) {
+  const index = adminQueuesData.findIndex((item) => item.id === queue.id)
+
+  if (index === -1) {
+    return undefined
+  }
+
+  normalizeQueueAssignments(queue)
+  syncPrinterQueueAssignments()
+  return cloneAdminQueue(adminQueuesData.find((item) => item.id === queue.id) ?? queue)
+}
+
+export function deleteAdminQueue(queueId: string) {
+  const nextQueues = adminQueuesData.filter((queue) => queue.id !== queueId)
+
+  if (nextQueues.length === adminQueuesData.length) {
+    return false
+  }
+
+  adminQueuesData = nextQueues
+  syncPrinterQueueAssignments()
+  return true
 }

@@ -12,12 +12,14 @@ interface AdvancedFilterPanelProps {
   fields: FilterField[]
   actionLabel?: string
   compact?: boolean
+  onAction?: () => void
 }
 
 export function AdvancedFilterPanel({
   fields,
   actionLabel = 'Reset filters',
   compact = false,
+  onAction,
 }: AdvancedFilterPanelProps) {
   return (
     <section className="ui-panel mb-5 overflow-hidden">
@@ -45,7 +47,11 @@ export function AdvancedFilterPanel({
         ))}
 
         <div className="flex items-end">
-          <button className={compact ? 'ui-button-secondary h-9 w-full justify-center px-3 py-0' : 'ui-button-secondary w-full justify-center'}>
+          <button
+            type="button"
+            onClick={onAction}
+            className={compact ? 'ui-button-secondary h-9 w-full justify-center px-3 py-0' : 'ui-button-secondary w-full justify-center'}
+          >
             <RotateCcw className={compact ? 'size-3.5' : 'size-4'} />
             {actionLabel}
           </button>
