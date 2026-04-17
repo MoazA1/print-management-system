@@ -36,7 +36,7 @@ export function UserShell() {
         </div>
       </div>
 
-      <div className="mx-auto grid min-h-[calc(100vh-2.25rem)] max-w-[1600px] grid-cols-1 lg:h-[calc(100vh-2.25rem)] lg:min-h-0 lg:grid-cols-[232px_minmax(0,1fr)] lg:overflow-hidden">
+      <div className="grid min-h-[calc(100vh-2.25rem)] max-w-[1600px] grid-cols-1 lg:h-[calc(100vh-2.25rem)] lg:min-h-0 lg:grid-cols-[232px_minmax(0,1fr)] lg:overflow-hidden">
         <aside className="flex flex-col border-b border-line/70 bg-white/70 px-4 py-5 backdrop-blur lg:h-full lg:border-r lg:border-b-0">
           <div className="border-b border-line pb-5">
             <div className="ui-kicker">Your Portal</div>

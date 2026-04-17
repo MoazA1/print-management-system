@@ -11,7 +11,6 @@ import {
   Logs,
   Monitor,
   Printer,
-  Search,
   Settings2,
   ShieldCheck,
   Wallet,
@@ -58,7 +57,7 @@ export function AdminShell() {
         </div>
       </div>
 
-      <div className="mx-auto grid min-h-[calc(100vh-2.25rem)] max-w-[1800px] grid-cols-1 lg:h-[calc(100vh-2.25rem)] lg:min-h-0 lg:grid-cols-[248px_minmax(0,1fr)] lg:overflow-hidden">
+      <div className="grid min-h-[calc(100vh-2.25rem)] max-w-[1800px] grid-cols-1 lg:h-[calc(100vh-2.25rem)] lg:min-h-0 lg:grid-cols-[248px_minmax(0,1fr)] lg:overflow-hidden">
         <aside className="flex flex-col border-b border-line/70 bg-white/70 px-4 py-5 backdrop-blur lg:h-full lg:border-r lg:border-b-0">
           <div className="flex items-start justify-between gap-4 border-b border-line pb-5">
             <div>
@@ -127,14 +126,6 @@ export function AdminShell() {
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
-                <label className="relative w-full min-w-56 max-w-80 xl:w-80">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-                  <input
-                    className="ui-input pl-10"
-                    placeholder="Search users, groups, printers, logs"
-                    type="search"
-                  />
-                </label>
                 <button className="ui-button-ghost">
                   <Bell className="size-4" />
                   Alerts
