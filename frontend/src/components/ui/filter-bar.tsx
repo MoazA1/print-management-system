@@ -1,4 +1,4 @@
-import { Search, SlidersHorizontal } from 'lucide-react'
+import { Search} from 'lucide-react'
 import type { ReactNode } from 'react'
 
 interface FilterBarProps {
@@ -26,10 +26,6 @@ export function FilterBar({
             onChange={(event) => onSearchChange(event.target.value)}
           />
         </label>
-        <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-          <SlidersHorizontal className="size-4" />
-          Quick filters
-        </div>
       </div>
       <div className="flex flex-wrap items-center gap-2">{children}</div>
     </div>

@@ -115,16 +115,18 @@ export function UsersPage() {
         <DataTable<AdminUser>
             columns={[
               {
-                key: 'full-name',
-                header: 'Full name',
-                render: (user) => <span className="ui-table-primary-strong">{user.displayName}</span>,
-              },
-              {
-                key: 'account',
+              
+                  key: 'account',
                 header: 'Account',
                 render: (user) => (
                   <span className="ui-table-secondary-mono">{user.username}</span>
                 ),
+              },
+              {
+                  key: 'full-name',
+                header: 'Full name',
+                render: (user) => <span className="ui-table-primary-strong">{user.displayName}</span>,
+              
               },
               {
                 key: 'balance',
@@ -137,11 +139,6 @@ export function UsersPage() {
                 key: 'restricted',
                 header: 'Restricted',
                 render: (user) => <span className="ui-table-secondary">{user.status === 'Suspended' ? 'Yes' : 'No'}</span>,
-              },
-              {
-                key: 'cards',
-                header: 'Cards',
-                render: (user) => <span className="ui-table-secondary">{user.cardId ? '1' : '0'}</span>,
               },
               {
                 key: 'jobs',
@@ -277,7 +274,6 @@ export function UserDetailPage() {
 
         <DetailActionBar>
           <button className="ui-button-ghost">Cancel</button>
-          <button className="ui-button-secondary">OK</button>
           <button className="ui-button">Apply</button>
         </DetailActionBar>
       </DetailPanel>
