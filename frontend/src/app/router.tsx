@@ -28,12 +28,14 @@ import { TechUsersScreen } from '@/features/technician/users/users-screen'
 import { PortalDashboardScreen } from '@/features/portal/dashboard/dashboard-screen'
 import { PortalHistoryScreen } from '@/features/portal/history/history-screen'
 import { PortalSubmitJobScreen } from '@/features/portal/submit-job/submit-job-screen'
+import { SignInPage } from '@/pages/sign-in-page'
 import { NotFoundPage } from '@/pages/not-found-page'
 
 export function AppRouter() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/portal/dashboard" replace />} />
+      <Route path="/sign-in" element={<SignInPage />} />
       <Route path="/portal" element={<UserShell />}>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<PortalDashboardScreen />} />
