@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-
-type UserRole = 'administrator' | 'technician' | 'student'
+import { validateUserCredentials } from '@/mocks/auth-store'
+import { login } from '@/lib/auth'
 
 interface SignInFormData {
   email: string
@@ -43,28 +43,31 @@ export function SignInPage() {
 
     setIsLoading(true)
 
-    // Simulate API call delay
+    // Simulate API call delay (remove in production with real auth service)
     await new Promise((resolve) => setTimeout(resolve, 800))
 
-    // Simulate role-based redirect based on email domain
-    // In a real app, this would come from your authentication API
-    const simulatedRole = getSimulatedRole(formData.email)
+    // Validate credentials against auth service (currently mock, easily replaceable)
+    const result = validateUserCredentials(formData.email, formData.password)
 
-    if (!simulatedRole) {
-      setError('Invalid credentials. Please try again.')
+    if (!result.ok) {
+      setError(result.reason)
       setIsLoading(false)
       return
     }
 
+    // Save user session
+    login(result.user)
+
     // Redirect based on role
-    switch (simulatedRole) {
-      case 'administrator':
+    switch (result.user.role) {
+      case 'Administrator':
         navigate('/admin/dashboard')
         break
-      case 'technician':
+      case 'Technician':
         navigate('/tech/dashboard')
         break
-      case 'student':
+      case 'Student':
+      case 'Faculty':
         navigate('/portal/dashboard')
         break
       default:
@@ -139,34 +142,17 @@ export function SignInPage() {
         </form>
 
         {/* Footer Note */}
-        <p className="mt-8 text-center text-xs text-slate-500">
-          Use different email domains to test roles:
-          <br />
-          <span className="font-mono text-slate-600">admin@</span> for Administrator,{' '}
-          <span className="font-mono text-slate-600">tech@</span> for Technician,{' '}
-          <span className="font-mono text-slate-600">student@</span> for Student
-        </p>
+        <div className="mt-8 space-y-2 rounded bg-mist-50 p-4 text-xs text-slate-600">
+          <p className="font-semibold">Test Credentials (all use password: 123456)</p>
+          <ul className="space-y-1 font-mono text-slate-600">
+            <li>• admin@university.edu - Administrator</li>
+            <li>• tech@university.edu - Technician</li>
+            <li>• student@university.edu - Student</li>
+            <li>• faculty@university.edu - Faculty</li>
+            <li>• suspended@university.edu - Suspended (blocked)</li>
+          </ul>
+        </div>
       </div>
     </div>
   )
-}
-
-/**
- * Simulate role determination based on email domain prefix
- * In production, this would come from your authentication service
- */
-function getSimulatedRole(email: string): UserRole | null {
-  const localPart = email.split('@')[0].toLowerCase()
-
-  if (localPart.startsWith('admin')) {
-    return 'administrator'
-  }
-  if (localPart.startsWith('tech')) {
-    return 'technician'
-  }
-  if (localPart.startsWith('student') || !localPart.startsWith('admin') && !localPart.startsWith('tech')) {
-    return 'student'
-  }
-
-  return null
 }
