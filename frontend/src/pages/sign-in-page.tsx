@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Printer, ShieldCheck } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -78,79 +79,97 @@ export function SignInPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-mist-100 px-6 py-8">
-      <div className="ui-panel w-full max-w-md px-8 py-12">
-        {/* Header */}
-        <div className="mb-8 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight text-ink-950">Sign In</h1>
-          <p className="mt-2 text-sm text-slate-600">
-            Enter your credentials to access the print management system
-          </p>
+    <div className="min-h-screen bg-transparent text-ink-950">
+      <div className="h-9 border-b border-accent-600/20 bg-accent-700 text-[0.78rem] text-white">
+        <div className="mx-auto flex h-full w-full max-w-[1040px] items-center justify-between px-4 sm:px-6">
+          <div className="flex items-center gap-2.5 font-medium">
+            <Printer className="size-3.5" />
+            <span>Print Management System</span>
+          </div>
+          <div className="hidden items-center gap-2 font-mono text-[0.68rem] uppercase tracking-[0.16em] text-white/80 sm:flex">
+            <span>University Access</span>
+          </div>
         </div>
+      </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Email/Username Field */}
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-ink-950 mb-2">
-              Email or Username
-            </label>
-            <Input
-              id="email"
-              name="email"
-              type="text"
-              placeholder="name@university.edu"
-              value={formData.email}
-              onChange={handleInputChange}
-              disabled={isLoading}
-              autoComplete="email"
-            />
-          </div>
-
-          {/* Password Field */}
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-ink-950 mb-2">
-              Password
-            </label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              placeholder="••••••••"
-              value={formData.password}
-              onChange={handleInputChange}
-              disabled={isLoading}
-              autoComplete="current-password"
-            />
-          </div>
-
-          {/* Error Message */}
-          {error && (
-            <div className="rounded border border-danger-200 bg-danger-50 px-4 py-3 text-sm text-danger-700">
-              {error}
+      <div className="mx-auto flex min-h-[calc(100vh-2.25rem)] w-full max-w-[1040px] items-center px-4 py-8 sm:px-6">
+        <div className="grid w-full overflow-hidden border border-line/90 bg-white shadow-[0_18px_45px_-30px_rgba(8,17,29,0.35)] lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+          <div className="hidden border-r border-line/80 bg-[#111827] px-8 py-10 text-white lg:flex lg:flex-col">
+            <div className="flex items-center gap-2 text-accent-500">
+              <ShieldCheck className="size-4" />
+              <span className="font-mono text-[0.68rem] uppercase tracking-[0.2em]">Secure Access</span>
             </div>
-          )}
+            <h1 className="mt-6 text-3xl font-semibold tracking-tight">Sign in to continue</h1>
+            <p className="mt-4 max-w-sm text-sm leading-6 text-slate-300">
+              Access your dashboard with role-based permissions for administrator, technician,
+              student, and faculty views.
+            </p>
+          </div>
 
-          {/* Sign In Button */}
-          <Button
-            type="submit"
-            disabled={isLoading}
-            className="w-full"
-          >
-            {isLoading ? 'Signing in...' : 'Sign In'}
-          </Button>
-        </form>
+          <div className="px-6 py-8 sm:px-8 sm:py-10">
+            <div className="mb-8">
+              <div className="ui-kicker">University Portal</div>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-ink-950">Sign In</h2>
+              <p className="mt-2 text-sm text-slate-600">
+                Enter your account credentials to access the print management system.
+              </p>
+            </div>
 
-        {/* Footer Note */}
-        <div className="mt-8 space-y-2 rounded bg-mist-50 p-4 text-xs text-slate-600">
-          <p className="font-semibold">Test Credentials (all use password: 123456)</p>
-          <ul className="space-y-1 font-mono text-slate-600">
-            <li>• admin@university.edu - Administrator</li>
-            <li>• tech@university.edu - Technician</li>
-            <li>• student@university.edu - Student</li>
-            <li>• faculty@university.edu - Faculty</li>
-            <li>• suspended@university.edu - Suspended (blocked)</li>
-          </ul>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <label htmlFor="email" className="mb-2 block text-sm font-medium text-ink-950">
+                  Email or Username
+                </label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="text"
+                  placeholder="name@university.edu"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  disabled={isLoading}
+                  autoComplete="email"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="password" className="mb-2 block text-sm font-medium text-ink-950">
+                  Password
+                </label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  disabled={isLoading}
+                  autoComplete="current-password"
+                />
+              </div>
+
+              {error && (
+                <div className="border border-danger-500/30 bg-danger-100 px-4 py-3 text-sm text-danger-500">
+                  {error}
+                </div>
+              )}
+
+              <Button type="submit" disabled={isLoading} className="w-full">
+                {isLoading ? 'Signing in...' : 'Sign In'}
+              </Button>
+            </form>
+
+            <div className="mt-6 space-y-2 border border-line/70 bg-mist-50 p-4 text-xs text-slate-600">
+              <p className="font-semibold text-ink-950">Test Credentials (all use password: 123456)</p>
+              <ul className="space-y-1 font-mono text-slate-600">
+                <li>admin@university.edu - Administrator</li>
+                <li>tech@university.edu - Technician</li>
+                <li>student@university.edu - Student</li>
+                <li>faculty@university.edu - Faculty</li>
+                <li>suspended@university.edu - Suspended (blocked)</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
     </div>

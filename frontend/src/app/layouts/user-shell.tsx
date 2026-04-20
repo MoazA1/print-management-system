@@ -2,12 +2,14 @@ import { motion } from 'framer-motion'
 import {
   FileClock,
   LayoutDashboard,
+  LogOut,
   Printer,
   Upload,
 } from 'lucide-react'
-import { NavLink, useLocation, useOutlet } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate, useOutlet } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { getCurrentPortalUserProfile } from '@/features/portal/session/api'
+import { logout } from '@/lib/auth'
 
 const portalNavItems = [
   { label: 'Dashboard', href: '/portal/dashboard', icon: LayoutDashboard },
@@ -17,10 +19,21 @@ const portalNavItems = [
 
 export function UserShell() {
   const location = useLocation()
+  const navigate = useNavigate()
   const outlet = useOutlet()
   const portalUserProfile = getCurrentPortalUserProfile()
   const sectionTitle =
     portalNavItems.find((item) => location.pathname.startsWith(item.href))?.label ?? 'Portal'
+
+  const handleLogout = () => {
+    const confirmed = window.confirm('Are you sure you want to log out?')
+    if (!confirmed) {
+      return
+    }
+
+    logout()
+    navigate('/sign-in', { replace: true })
+  }
 
   return (
     <div className="min-h-screen bg-transparent text-ink-950 lg:h-screen lg:overflow-hidden">
@@ -86,6 +99,10 @@ export function UserShell() {
                 Active
               </div>
             </div>
+            <button className="ui-button-secondary mt-4 w-full" onClick={handleLogout}>
+              <LogOut className="size-4" />
+              Log Out
+            </button>
           </div>
         </aside>
 

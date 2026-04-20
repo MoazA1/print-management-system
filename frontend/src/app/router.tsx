@@ -34,7 +34,7 @@ import { NotFoundPage } from '@/pages/not-found-page'
 export function AppRouter() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/portal/dashboard" replace />} />
+      <Route path="/" element={<Navigate to="/sign-in" replace />} />
       <Route path="/sign-in" element={<SignInPage />} />
       <Route path="/portal" element={<UserShell />}>
         <Route index element={<Navigate to="dashboard" replace />} />
