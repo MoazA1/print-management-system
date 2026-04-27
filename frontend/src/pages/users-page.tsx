@@ -1,8 +1,7 @@
 import { useDeferredValue, useMemo, useState } from 'react'
-import { Ban, Download, Plus, RefreshCw } from 'lucide-react'
+import { Ban, Download, Plus, RefreshCw, RotateCcw } from 'lucide-react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { DetailActionBar, DetailAlert, DetailPanel, DetailSection } from '../components/ui/admin-detail'
-import { AdvancedFilterPanel } from '../components/ui/advanced-filter-panel'
 import { DataTable } from '../components/ui/data-table'
 import { FilterBar } from '../components/ui/filter-bar'
 import { PageHeader } from '../components/ui/page-header'
@@ -35,6 +34,14 @@ export function UsersPage() {
     })
   }, [adminUsers, deferredSearch, scope, department, role, groupFilter])
 
+  function resetUserFilters() {
+    setSearch('')
+    setScope('All')
+    setDepartment('All departments')
+    setRole('All roles')
+    setGroupFilter('All groups')
+  }
+
   return (
     <div className="min-w-0">
       <PageHeader
@@ -48,68 +55,80 @@ export function UsersPage() {
         }
       />
 
-      <AdvancedFilterPanel
-        fields={[
-          {
-            id: 'status',
-            label: 'Status',
-            value: scope,
-            options: ['All', 'Active', 'Suspended'],
-            onChange: (value) => setScope(value as 'All' | 'Active' | 'Suspended'),
-          },
-          {
-            id: 'department',
-            label: 'Department',
-            value: department,
-            options: ['All departments', 'Computer Science', 'Data Science', 'Information Systems', 'Mathematics', 'Operations'],
-            onChange: setDepartment,
-          },
-          {
-            id: 'role',
-            label: 'Role',
-            value: role,
-            options: ['All roles', 'Administrator', 'Technician', 'Faculty', 'Student'],
-            onChange: setRole,
-          },
-          {
-            id: 'group',
-            label: 'Group',
-            value: groupFilter,
-            options: ['All groups', 'CCM-Students', 'Faculty', 'Technicians', 'Administrators', 'AI Lab'],
-            onChange: setGroupFilter,
-          },
-        ]}
-      />
-
       <FilterBar
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder="Search by account or name"
-      >
-        <div className="flex w-full flex-wrap items-center justify-end gap-2 xl:flex-nowrap">
-          <button className="ui-button-action px-3 py-2">
-            <Plus className="size-4" />
-            Add user
-          </button>
-          <button className="ui-button-danger-soft px-3 py-2">
-            <Ban className="size-4" />
-            Delete
-          </button>
-          <button className="ui-button-secondary px-3 py-2">
-            <Download className="size-4" />
-            Export users
-          </button>
-          {(['All', 'Active', 'Suspended'] as const).map((value) => (
-            <button
-              key={value}
-              className={scope === value ? 'ui-button-secondary border-accent-500 text-accent-700' : 'ui-button-ghost'}
-              onClick={() => setScope(value)}
-            >
-              {value}
+        actions={
+          <>
+            <button className="ui-button-action h-9 px-3 py-0">
+              <Plus className="size-4" />
+              Add user
             </button>
-          ))}
-        </div>
-      </FilterBar>
+            <button className="ui-button-danger-soft h-9 px-3 py-0">
+              <Ban className="size-4" />
+              Delete
+            </button>
+            <button className="ui-button-secondary h-9 px-3 py-0">
+              <Download className="size-4" />
+              Export users
+            </button>
+          </>
+        }
+        filters={
+          <>
+            <label className="min-w-[8.5rem] flex-1 sm:flex-none">
+              <span className="sr-only">Status</span>
+              <select
+                className="ui-select h-9 w-full min-w-[8.5rem]"
+                aria-label="Status"
+                value={scope}
+                onChange={(event) => setScope(event.target.value as 'All' | 'Active' | 'Suspended')}
+              >
+                <option>All</option>
+                <option>Active</option>
+                <option>Suspended</option>
+              </select>
+            </label>
+            <label className="min-w-[11rem] flex-1 sm:flex-none">
+              <span className="sr-only">Department</span>
+              <select className="ui-select h-9 w-full min-w-[11rem]" aria-label="Department" value={department} onChange={(event) => setDepartment(event.target.value)}>
+                <option>All departments</option>
+                <option>Computer Science</option>
+                <option>Data Science</option>
+                <option>Information Systems</option>
+                <option>Mathematics</option>
+                <option>Operations</option>
+              </select>
+            </label>
+            <label className="min-w-[9rem] flex-1 sm:flex-none">
+              <span className="sr-only">Role</span>
+              <select className="ui-select h-9 w-full min-w-[9rem]" aria-label="Role" value={role} onChange={(event) => setRole(event.target.value)}>
+                <option>All roles</option>
+                <option>Administrator</option>
+                <option>Technician</option>
+                <option>Faculty</option>
+                <option>Student</option>
+              </select>
+            </label>
+            <label className="min-w-[9rem] flex-1 sm:flex-none">
+              <span className="sr-only">Group</span>
+              <select className="ui-select h-9 w-full min-w-[9rem]" aria-label="Group" value={groupFilter} onChange={(event) => setGroupFilter(event.target.value)}>
+                <option>All groups</option>
+                <option>CCM-Students</option>
+                <option>Faculty</option>
+                <option>Technicians</option>
+                <option>Administrators</option>
+                <option>AI Lab</option>
+              </select>
+            </label>
+            <button type="button" className="ui-button-secondary h-9 px-3 py-0" onClick={resetUserFilters}>
+              <RotateCcw className="size-3.5" />
+              Reset
+            </button>
+          </>
+        }
+      />
 
       <div className="mt-4">
         <DataTable<AdminUser>
@@ -179,14 +198,21 @@ export function UserDetailPage() {
       />
 
       <DetailPanel>
-        <DetailSection title="Identity">
+        {user.status === 'Suspended' ? (
+          <DetailAlert
+            className="mb-0"
+            title="User restricted"
+            description="This account is suspended and cannot submit or release jobs until it is reactivated."
+          />
+        ) : null}
+
+        <DetailSection title="Access and quota">
           <label>
-            <div className="ui-detail-label">Username</div>
-            <input className="ui-input mt-2 font-mono" defaultValue={user.username} />
-          </label>
-          <label>
-            <div className="ui-detail-label">Full name</div>
-            <input className="ui-input mt-2" defaultValue={user.displayName} />
+            <div className="ui-detail-label">Status</div>
+            <select className="ui-select mt-2 w-full" defaultValue={user.status}>
+              <option>Active</option>
+              <option>Suspended</option>
+            </select>
           </label>
           <label>
             <div className="ui-detail-label">Role</div>
@@ -197,44 +223,6 @@ export function UserDetailPage() {
               <option>Student</option>
             </select>
           </label>
-          <label>
-            <div className="ui-detail-label">Status</div>
-            <select className="ui-select mt-2 w-full" defaultValue={user.status}>
-              <option>Active</option>
-              <option>Suspended</option>
-            </select>
-          </label>
-        </DetailSection>
-
-        <DetailSection title="Contact and directory">
-          <label>
-            <div className="ui-detail-label">Email</div>
-            <input className="ui-input mt-2" defaultValue={user.email} />
-          </label>
-          <label>
-            <div className="ui-detail-label">Department</div>
-            <input className="ui-input mt-2" defaultValue={user.department} />
-          </label>
-          <label>
-            <div className="ui-detail-label">Office</div>
-            <input className="ui-input mt-2" defaultValue={user.office} />
-          </label>
-          <label>
-            <div className="ui-detail-label">Last seen</div>
-            <input className="ui-input mt-2" defaultValue={user.lastSeen} />
-          </label>
-        </DetailSection>
-
-        {user.status === 'Suspended' ? (
-          <div className="px-5 pt-5">
-            <DetailAlert
-              title="User restricted"
-              description="This account is suspended and cannot submit or release jobs until it is reactivated."
-            />
-          </div>
-        ) : null}
-
-        <DetailSection title="Access and restrictions">
           <label>
             <div className="ui-detail-label">Balance</div>
             <input className="ui-input mt-2" defaultValue={user.quotaTotal - user.quotaUsed} />
@@ -269,6 +257,33 @@ export function UserDetailPage() {
           <label>
             <div className="ui-detail-label">Notes</div>
             <textarea className="ui-textarea mt-2" defaultValue={user.notes} />
+          </label>
+        </DetailSection>
+
+        <DetailSection title="Profile">
+          <label>
+            <div className="ui-detail-label">Username</div>
+            <input className="ui-input mt-2 font-mono" defaultValue={user.username} />
+          </label>
+          <label>
+            <div className="ui-detail-label">Full name</div>
+            <input className="ui-input mt-2" defaultValue={user.displayName} />
+          </label>
+          <label>
+            <div className="ui-detail-label">Email</div>
+            <input className="ui-input mt-2" defaultValue={user.email} />
+          </label>
+          <label>
+            <div className="ui-detail-label">Department</div>
+            <input className="ui-input mt-2" defaultValue={user.department} />
+          </label>
+          <label>
+            <div className="ui-detail-label">Office</div>
+            <input className="ui-input mt-2" defaultValue={user.office} />
+          </label>
+          <label>
+            <div className="ui-detail-label">Last seen</div>
+            <input className="ui-input mt-2" defaultValue={user.lastSeen} />
           </label>
         </DetailSection>
 

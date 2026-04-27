@@ -38,6 +38,17 @@ export class DirectPrintService {
       postScriptPath,
     })
 
+    console.info('Direct print job sent', {
+      jobId,
+      originalFileName,
+      printerHost: config.printer.host,
+      printerPort: config.printer.port,
+      uploadedPath,
+      postScriptPath,
+      bytesSent,
+      sentAt: new Date().toISOString(),
+    })
+
     return {
       jobId,
       status: 'sent_to_printer',

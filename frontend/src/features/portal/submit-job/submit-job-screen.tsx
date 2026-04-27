@@ -9,7 +9,7 @@ import type { PortalSubmissionDraft } from '@/types/portal'
 export function PortalSubmitJobScreen() {
   const navigate = useNavigate()
   const { defaultQueue, profile, queues } = useMemo(() => getPortalSubmissionSnapshot(), [])
-  const { draft, feedback, file, resetForm, setDraft, setFeedback, setFile } = usePortalSubmissionForm()
+  const { draft, feedback, file, isSubmitting, resetForm, setDraft, setFeedback, setFile, setIsSubmitting } = usePortalSubmissionForm()
   const quotaRemaining = profile.quotaTotal - profile.quotaUsed
   const supportsColorOnAssignedRoute = defaultQueue?.colorMode === 'Color'
   const totalPages = draft.pages * draft.copies
@@ -29,7 +29,7 @@ export function PortalSubmitJobScreen() {
     setDraft((current) => ({ ...current, [field]: value }))
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
     if (!file) {
@@ -38,10 +38,10 @@ export function PortalSubmitJobScreen() {
     }
 
     const extension = file.name.split('.').pop()?.toLowerCase() ?? ''
-    const allowedExtensions = ['pdf', 'docx', 'pptx']
+    const allowedExtensions = ['pdf']
 
     if (!allowedExtensions.includes(extension) || file.size > 20 * 1024 * 1024) {
-      setFeedback({ tone: 'error', message: 'Use a PDF, DOCX, or PPTX file under 20 MB.' })
+      setFeedback({ tone: 'error', message: 'Use a PDF file under 20 MB. DOCX/PPTX conversion is not wired yet.' })
       return
     }
 
@@ -60,18 +60,27 @@ export function PortalSubmitJobScreen() {
       return
     }
 
-    const createdJob = submitPortalJob({ ...draft, fileName: file.name })
+    setIsSubmitting(true)
 
-    if (!createdJob) {
-      setFeedback({ tone: 'error', message: 'Your assigned submission route is not currently available for the selected print settings.' })
-      return
+    try {
+      const { backendResult, portalJob } = await submitPortalJob({ ...draft, fileName: file.name }, file)
+
+      if (!portalJob) {
+        setFeedback({ tone: 'error', message: 'The backend printed the file, but the local portal history mock could not create a job record.' })
+        return
+      }
+
+      setFeedback({
+        tone: 'success',
+        message: `Job sent to ${backendResult.printerHost}:${backendResult.printerPort} as ${backendResult.jobId}. ${backendResult.bytesSent.toLocaleString()} bytes were delivered.`,
+      })
+      resetForm()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Backend print request failed.'
+      setFeedback({ tone: 'error', message })
+    } finally {
+      setIsSubmitting(false)
     }
-
-    setFeedback({
-      tone: 'success',
-      message: `Job accepted as ${createdJob.id} on ${createdJob.queueName}. It will remain held for up to ${profile.retentionHours} hours if unreleased.`,
-    })
-    resetForm()
   }
 
   return (
@@ -85,9 +94,9 @@ export function PortalSubmitJobScreen() {
             <div className="px-5 py-5">
               <label className="flex min-h-36 cursor-pointer flex-col items-center justify-center border border-dashed border-line bg-mist-50 px-4 py-6 text-center">
                 <Upload className="size-5 text-slate-500" />
-                <div className="mt-3 text-sm font-semibold text-ink-950">{file ? file.name : 'Upload PDF, DOCX, or PPTX'}</div>
+                <div className="mt-3 text-sm font-semibold text-ink-950">{file ? file.name : 'Upload PDF'}</div>
                 <div className="mt-1 text-sm text-slate-500">Up to 20 MB</div>
-                <input type="file" className="sr-only" accept=".pdf,.docx,.pptx" onChange={handleFileChange} />
+                <input type="file" className="sr-only" accept=".pdf,application/pdf" onChange={handleFileChange} />
               </label>
             </div>
           </section>
@@ -176,11 +185,11 @@ export function PortalSubmitJobScreen() {
                   <span>{feedback.message}</span>
                 </div>
               ) : (
-                <div className="text-sm text-slate-500">PDF, DOCX, and PPTX are accepted.</div>
+                <div className="text-sm text-slate-500">PDF files are sent to the backend direct-print connector.</div>
               )}
               <div className="flex flex-wrap gap-2">
                 <button type="button" className="ui-button-secondary" onClick={() => navigate('/portal/history')}>History</button>
-                <button type="submit" className="ui-button">Submit job</button>
+                <button type="submit" className="ui-button" disabled={isSubmitting}>{isSubmitting ? 'Sending...' : 'Submit job'}</button>
               </div>
             </div>
           </section>
