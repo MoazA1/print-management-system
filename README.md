@@ -77,6 +77,7 @@ npm run lint
 
 After starting the front end, open the local Vite URL and use the available routes:
 
+- `/sign-in`
 - `/portal/dashboard`
 - `/portal/submit-job`
 - `/portal/history`
@@ -88,6 +89,36 @@ After starting the front end, open the local Vite URL and use the available rout
 - `/tech/dashboard`
 
 The current milestone uses mock data to simulate user actions and interface behavior.
+
+## Mock Authentication (Current)
+
+The prototype currently uses a mock authentication layer designed to be replaced later with SSO/Active Directory.
+
+- Session is stored in `localStorage` under `auth_user`
+- Passwords are only used in the mock store and are not saved in session
+- Login redirects by role:
+	- `Administrator` -> `/admin/dashboard`
+	- `Technician` -> `/tech/dashboard`
+	- `Student` / `Faculty` -> `/portal/dashboard`
+
+### Test Credentials
+
+All mock users use password: `123456`
+
+- `admin@university.edu` (Administrator)
+- `tech@university.edu` (Technician)
+- `student@university.edu` (Student)
+- `faculty@university.edu` (Faculty)
+- `suspended@university.edu` (Suspended account, login blocked)
+
+## Portal User-Aware Mock Data
+
+Portal pages now resolve profile and job history from the authenticated user.
+
+- `Student` and `Faculty` users now see user-specific portal profile data
+- Portal job lists are filtered by the logged-in portal user
+- New submitted jobs are stored with the current portal user's id
+- Printers and queues remain shared static mock data for this milestone
 
 ## Team Members and Roles
 
