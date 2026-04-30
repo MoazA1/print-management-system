@@ -5,9 +5,11 @@ import express from 'express'
 import multer from 'multer'
 import { config } from '../config.js'
 import { DirectPrintService } from '../services/direct-print-service.js'
+import { WindowsQueuePrintClient } from '../services/windows-queue-print-client.js'
 
 const router = express.Router()
 const directPrintService = new DirectPrintService()
+const windowsQueuePrintClient = new WindowsQueuePrintClient()
 
 const storage = multer.diskStorage({
   destination: async (_req, _file, cb) => {
@@ -53,6 +55,25 @@ router.post('/print-direct', upload.single('file'), async (req, res, next) => {
     const result = await directPrintService.printUploadedPdf({
       uploadedPath: req.file.path,
       originalFileName: req.file.originalname,
+    })
+
+    res.status(202).json(result)
+  } catch (error) {
+    next(error)
+  }
+})
+
+router.post('/print-windows-queue', upload.single('file'), async (req, res, next) => {
+  try {
+    if (!req.file) {
+      res.status(400).json({ error: 'Upload a PDF using multipart field "file".' })
+      return
+    }
+
+    const result = await windowsQueuePrintClient.printUploadedPdf({
+      uploadedPath: req.file.path,
+      originalFileName: req.file.originalname,
+      printerName: req.body.printerName || config.windowsPrintQueue.target,
     })
 
     res.status(202).json(result)

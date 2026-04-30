@@ -1,6 +1,6 @@
 import { useDeferredValue, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AlertTriangle, Bell, CheckCircle2 } from 'lucide-react'
+import { AlertTriangle, Bell, CheckCircle2, RotateCcw } from 'lucide-react'
 import { DataTable } from '@/components/ui/data-table'
 import { FilterBar } from '@/components/ui/filter-bar'
 import { PageHeader } from '@/components/ui/page-header'
@@ -17,7 +17,8 @@ export function TechAlertsScreen() {
   const alerts = listTechAlerts()
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
-  const [filter, setFilter] = useState<'All' | 'Active' | 'Acknowledged'>('All')
+  const [statusFilter, setStatusFilter] = useState<'All' | 'Active' | 'Acknowledged'>('All')
+  const [severityFilter, setSeverityFilter] = useState<'All severities' | TechAlert['severity']>('All severities')
   const deferredSearch = useDeferredValue(search)
 
   const filteredAlerts = useMemo(() => {
@@ -29,34 +30,67 @@ export function TechAlertsScreen() {
           v.toLowerCase().includes(query),
         )
       const matchesFilter =
-        filter === 'All'
+        statusFilter === 'All'
           ? true
-          : filter === 'Active'
+          : statusFilter === 'Active'
             ? !alert.acknowledged
             : alert.acknowledged
-      return matchesSearch && matchesFilter
+      const matchesSeverity =
+        severityFilter === 'All severities' ? true : alert.severity === severityFilter
+      return matchesSearch && matchesFilter && matchesSeverity
     })
-  }, [alerts, deferredSearch, filter])
+  }, [alerts, deferredSearch, statusFilter, severityFilter])
+
+  function resetFilters() {
+    setSearch('')
+    setStatusFilter('All')
+    setSeverityFilter('All severities')
+  }
 
   return (
     <div className="min-w-0">
-      <PageHeader eyebrow="Alerts" title="System alerts" description="Printer, device, and directory events that require technician review. Configuration changes remain outside this surface." />
+      <PageHeader eyebrow="Alerts" title="Alert triage" />
 
       <FilterBar
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder="Search alerts"
-      >
-        {(['All', 'Active', 'Acknowledged'] as const).map((value) => (
-          <button
-            key={value}
-            className={filter === value ? 'ui-button-secondary border-accent-500 text-accent-700' : 'ui-button-ghost'}
-            onClick={() => setFilter(value)}
-          >
-            {value}
-          </button>
-        ))}
-      </FilterBar>
+        filters={
+          <>
+            <label className="min-w-[10rem] flex-1 sm:flex-none">
+              <span className="sr-only">Status</span>
+              <select
+                className="ui-select h-9 w-full min-w-[10rem]"
+                aria-label="Status"
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value as 'All' | 'Active' | 'Acknowledged')}
+              >
+                <option>All</option>
+                <option>Active</option>
+                <option>Acknowledged</option>
+              </select>
+            </label>
+            <label className="min-w-[11rem] flex-1 sm:flex-none">
+              <span className="sr-only">Severity</span>
+              <select
+                className="ui-select h-9 w-full min-w-[11rem]"
+                aria-label="Severity"
+                value={severityFilter}
+                onChange={(event) => setSeverityFilter(event.target.value as 'All severities' | TechAlert['severity'])}
+              >
+                <option>All severities</option>
+                <option value="critical">Critical</option>
+                <option value="warning">Warning</option>
+                <option value="info">Info</option>
+              </select>
+            </label>
+            <button type="button" className="ui-button-secondary h-9 px-3 py-0" onClick={resetFilters}>
+              <RotateCcw className="size-3.5" />
+              Reset
+            </button>
+          </>
+        }
+      />
 
       <div className="mt-4">
         <DataTable<TechAlert>

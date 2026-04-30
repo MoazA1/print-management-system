@@ -5,9 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
+    "dev:windows-connector": "tsx watch src/windows-connector-server.ts",
     "start": "node dist/server.js",
+    "start:windows-connector": "node dist/windows-connector-server.js",
     "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "db:migrate": "tsx src/db/migrate.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",

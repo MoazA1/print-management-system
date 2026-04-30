@@ -8,3 +8,16 @@ export interface DirectPrintResult {
   postScriptPath: string
   bytesSent: number
 }
+
+export interface WindowsQueuePrintResult {
+  jobId: string
+  status: 'queued'
+  printerName: string
+  originalFileName: string
+  uploadedPath?: string
+  connectorUrl?: string
+  command?: string
+  stdout?: string
+  stderr?: string
+  queuedAt: string
+}
