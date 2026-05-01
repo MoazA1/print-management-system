@@ -174,6 +174,8 @@ Expected result:
 }
 ```
 
+For the current spike, `status: "queued"` means the connector accepted the PDF and submitted it to SumatraPDF / the Windows queue. A successful response may include fields such as `jobId`, `uploadedPath`, `command`, `stdout`, `stderr`, `queuedAt`, and `connectorUrl`. This is enough to prove connector-to-queue submission, but it is not final device completion telemetry.
+
 Use a connector token and a Windows Firewall rule before exposing this beyond a trusted test network.
 
 Known successful experiment:

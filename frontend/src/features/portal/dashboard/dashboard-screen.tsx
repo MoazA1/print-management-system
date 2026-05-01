@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Upload } from 'lucide-react'
 import { PageHeader } from '@/components/composite/page-header'
@@ -10,7 +10,36 @@ import { cancelDashboardJob, getPortalDashboardSnapshot } from './api'
 const usageLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 export function PortalDashboardScreen() {
-  const [snapshot, setSnapshot] = useState(() => getPortalDashboardSnapshot())
+  const [snapshot, setSnapshot] = useState<Awaited<ReturnType<typeof getPortalDashboardSnapshot>> | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  useEffect(() => {
+    refreshSnapshot()
+  }, [])
+
+  async function refreshSnapshot() {
+    try {
+      setSnapshot(await getPortalDashboardSnapshot())
+      setError(null)
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Unable to load portal dashboard.')
+    }
+  }
+
+  if (!snapshot) {
+    return (
+      <div className="min-w-0">
+        <PageHeader
+          eyebrow="Portal"
+          title="Dashboard"
+          description="Active print jobs, quota, and recent activity for your account."
+        />
+        <div className={`ui-panel px-4 py-6 text-sm ${error ? 'text-danger-500' : 'text-slate-500'}`}>
+          {error ?? 'Loading portal dashboard...'}
+        </div>
+      </div>
+    )
+  }
+
   const { jobs, profile, weeklyUsage } = snapshot
   const activeJobs = jobs.filter((job) => job.status === 'Pending Release' || job.status === 'In Progress')
   const completedJobs = jobs.filter((job) => job.status === 'Completed')
@@ -20,9 +49,12 @@ export function PortalDashboardScreen() {
   const quotaPercent = Math.min(100, Math.round((profile.quotaUsed / profile.quotaTotal) * 100))
   const linePoints = buildLinePoints(weeklyUsage, 440, 120)
 
-  function handleCancel(jobId: string) {
-    if (cancelDashboardJob(jobId)) {
-      setSnapshot(getPortalDashboardSnapshot())
+  async function handleCancel(jobId: string) {
+    try {
+      await cancelDashboardJob(jobId)
+      await refreshSnapshot()
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Unable to cancel job.')
     }
   }
 
@@ -39,6 +71,12 @@ export function PortalDashboardScreen() {
           </Link>
         }
       />
+
+      {error ? (
+        <div className="mb-4 border border-danger-500/30 bg-danger-100 px-4 py-3 text-sm text-danger-500">
+          {error}
+        </div>
+      ) : null}
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
         <section className="ui-panel overflow-hidden">

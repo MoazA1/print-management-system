@@ -1,4 +1,4 @@
-import { useDeferredValue, useMemo, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { Ban, Download, Plus, RefreshCw, RotateCcw } from 'lucide-react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { DetailActionBar, DetailAlert, DetailPanel, DetailSection } from '../components/ui/admin-detail'
@@ -9,7 +9,8 @@ import { getUserByIdOrUndefined, listUsers } from '../features/admin/users/api'
 import type { AdminUser } from '../types/admin'
 
 export function UsersPage() {
-  const adminUsers = listUsers()
+  const [adminUsers, setAdminUsers] = useState<AdminUser[]>([])
+  const [loadError, setLoadError] = useState<string | null>(null)
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [scope, setScope] = useState<'All' | 'Active' | 'Suspended'>('All')
@@ -17,6 +18,27 @@ export function UsersPage() {
   const [role, setRole] = useState('All roles')
   const [groupFilter, setGroupFilter] = useState('All groups')
   const deferredSearch = useDeferredValue(search)
+
+  useEffect(() => {
+    let cancelled = false
+
+    listUsers()
+      .then((users) => {
+        if (!cancelled) {
+          setAdminUsers(users)
+          setLoadError(null)
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setLoadError(error instanceof Error ? error.message : 'Unable to load users.')
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const filteredUsers = useMemo(() => {
     const query = deferredSearch.trim().toLowerCase()
@@ -130,6 +152,12 @@ export function UsersPage() {
         }
       />
 
+      {loadError ? (
+        <div className="mt-4 border border-danger-500/30 bg-danger-100 px-4 py-3 text-sm text-danger-500">
+          {loadError}
+        </div>
+      ) : null}
+
       <div className="mt-4">
         <DataTable<AdminUser>
             columns={[
@@ -178,7 +206,34 @@ export function UsersPage() {
 export function UserDetailPage() {
   const navigate = useNavigate()
   const { userId } = useParams()
-  const user = getUserByIdOrUndefined(userId)
+  const [user, setUser] = useState<AdminUser | undefined>()
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+
+    getUserByIdOrUndefined(userId)
+      .then((nextUser) => {
+        if (!cancelled) {
+          setUser(nextUser)
+          setLoaded(true)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setUser(undefined)
+          setLoaded(true)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [userId])
+
+  if (!loaded) {
+    return <div className="ui-panel px-4 py-6 text-sm text-slate-500">Loading user...</div>
+  }
 
   if (!user) {
     return <Navigate to="/admin/users" replace />

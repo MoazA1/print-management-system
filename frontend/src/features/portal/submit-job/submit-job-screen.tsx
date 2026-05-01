@@ -1,5 +1,5 @@
 import { AlertTriangle, CheckCircle2, Info, Upload } from 'lucide-react'
-import { useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PageHeader } from '@/components/composite/page-header'
 import { formatUsd } from '@/lib/formatters'
@@ -9,15 +9,39 @@ import type { PortalSubmissionDraft } from '@/types/portal'
 
 export function PortalSubmitJobScreen() {
   const navigate = useNavigate()
-  const { defaultQueue, profile, queues } = useMemo(() => getPortalSubmissionSnapshot(), [])
+  const [snapshot, setSnapshot] = useState<Awaited<ReturnType<typeof getPortalSubmissionSnapshot>> | null>(null)
+  const [snapshotError, setSnapshotError] = useState<string | null>(null)
   const { draft, feedback, file, isSubmitting, resetForm, setDraft, setFeedback, setFile, setIsSubmitting } = usePortalSubmissionForm()
-  const quotaRemaining = profile.quotaTotal - profile.quotaUsed
+  const defaultQueue = snapshot?.defaultQueue
+  const queues = snapshot?.queues ?? []
+  const profile = snapshot?.profile
+  const quotaRemaining = profile ? profile.quotaTotal - profile.quotaUsed : 0
   const supportsColorOnAssignedRoute = defaultQueue?.colorMode === 'Color'
   const totalPages = draft.pages * draft.copies
   const estimatedCost = defaultQueue
     ? Number((totalPages * defaultQueue.costPerPage * (draft.duplex ? 0.9 : 1) * (draft.colorMode === 'Color' ? 2 : 1)).toFixed(2))
     : 0
   const alternateEligibleQueues = queues.filter((queue) => queue.available && !queue.isDefault)
+
+  useEffect(() => {
+    let cancelled = false
+
+    getPortalSubmissionSnapshot()
+      .then((nextSnapshot) => {
+        if (!cancelled) {
+          setSnapshot(nextSnapshot)
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setSnapshotError(error instanceof Error ? error.message : 'Unable to load portal route.')
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const nextFile = event.target.files?.[0] ?? null
@@ -73,7 +97,7 @@ export function PortalSubmitJobScreen() {
 
       setFeedback({
         tone: 'success',
-        message: `Job sent to ${backendResult.printerHost}:${backendResult.printerPort} as ${backendResult.jobId}. ${backendResult.bytesSent.toLocaleString()} bytes were delivered.`,
+        message: `Job ${portalJob.id} was stored by the backend in ${portalJob.queueName}. Status: ${backendResult.status}.`,
       })
       resetForm()
     } catch (error) {
@@ -92,7 +116,17 @@ export function PortalSubmitJobScreen() {
         description="Upload one PDF to your assigned campus print route."
       />
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
+      {snapshotError ? (
+        <div className="mb-4 border border-danger-500/30 bg-danger-100 px-4 py-3 text-sm text-danger-500">
+          {snapshotError}
+        </div>
+      ) : null}
+
+      {!snapshot && !snapshotError ? (
+        <div className="ui-panel px-4 py-6 text-sm text-slate-500">Loading your assigned route...</div>
+      ) : null}
+
+      {snapshot ? <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
         <form className="space-y-4" onSubmit={handleSubmit}>
           <section className="ui-panel overflow-hidden">
             <div className="border-b border-line bg-mist-50/80 px-4 py-3">
@@ -149,7 +183,7 @@ export function PortalSubmitJobScreen() {
                   <span>{feedback.message}</span>
                 </div>
               ) : (
-                <div className="text-sm text-slate-500">PDF files are sent to the backend direct-print connector and held against your assigned route.</div>
+                <div className="text-sm text-slate-500">PDF files are stored by the backend and held against your assigned route.</div>
               )}
               <div className="flex flex-wrap gap-2">
                 <button type="button" className="ui-button-secondary" onClick={() => navigate('/portal/history')}>History</button>
@@ -206,20 +240,20 @@ export function PortalSubmitJobScreen() {
               <div className="flex justify-between gap-4"><span>Estimated cost</span><span className="font-medium text-ink-950">{formatUsd(estimatedCost)}</span></div>
               <div className="flex justify-between gap-4"><span>Output support</span><span className="font-medium text-ink-950">{supportsColorOnAssignedRoute ? 'Black & White, Color' : 'Black & White only'}</span></div>
               <div className="flex justify-between gap-4"><span>Release</span><span className="font-medium text-ink-950">{defaultQueue?.releaseMode ?? 'Assignment required'}</span></div>
-              <div className="border-t border-line pt-4 text-slate-500">Held files clear after {profile.retentionHours} hours. Release still happens at the device, not in this upload form.</div>
+              <div className="border-t border-line pt-4 text-slate-500">Held files clear after {profile?.retentionHours ?? 24} hours. Release still happens at the device, not in this upload form.</div>
             </div>
           </section>
 
           <section className="ui-panel overflow-hidden">
             <div className="border-b border-line bg-mist-50/80 px-4 py-3"><div className="text-base font-semibold text-ink-950">Quota</div></div>
             <div className="px-4 py-4">
-              <div className="text-2xl font-semibold tracking-normal text-ink-950">{profile.quotaUsed}/{profile.quotaTotal}</div>
-              <div className="mt-4 h-2 bg-slate-100"><div className="h-full bg-accent-700" style={{ width: `${(profile.quotaUsed / profile.quotaTotal) * 100}%` }} /></div>
-              <div className="mt-3 text-sm text-slate-500">{profile.quotaTotal - profile.quotaUsed} pages currently available.</div>
+              <div className="text-2xl font-semibold tracking-normal text-ink-950">{profile?.quotaUsed}/{profile?.quotaTotal}</div>
+              <div className="mt-4 h-2 bg-slate-100"><div className="h-full bg-accent-700" style={{ width: `${profile ? (profile.quotaUsed / profile.quotaTotal) * 100 : 0}%` }} /></div>
+              <div className="mt-3 text-sm text-slate-500">{quotaRemaining} pages currently available.</div>
             </div>
           </section>
         </aside>
-      </div>
+      </div> : null}
     </div>
   )
 }

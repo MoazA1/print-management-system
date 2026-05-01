@@ -1,5 +1,5 @@
 import { RotateCcw } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { FilterBar } from '@/components/composite/filter-bar'
 import { PageHeader } from '@/components/composite/page-header'
 import { DataTable } from '@/components/ui/data-table'
@@ -17,13 +17,30 @@ function getHistoryMessage(job: PortalPrintJob) {
 }
 
 export function PortalHistoryScreen() {
-  const [jobs, setJobs] = useState(() => listHistoryJobs())
+  const [jobs, setJobs] = useState<PortalPrintJob[]>([])
+  const [error, setError] = useState<string | null>(null)
   const { filteredJobs, search, setSearch, sortBy, setSortBy, statusFilter, setStatusFilter } =
     usePortalHistoryFilters(jobs)
 
-  function handleCancel(jobId: string) {
-    if (cancelHistoryJob(jobId)) {
-      setJobs(listHistoryJobs())
+  useEffect(() => {
+    refreshJobs()
+  }, [])
+
+  async function refreshJobs() {
+    try {
+      setJobs(await listHistoryJobs())
+      setError(null)
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Unable to load print history.')
+    }
+  }
+
+  async function handleCancel(jobId: string) {
+    try {
+      await cancelHistoryJob(jobId)
+      await refreshJobs()
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Unable to cancel job.')
     }
   }
 
@@ -68,6 +85,12 @@ export function PortalHistoryScreen() {
           </>
         }
       />
+
+      {error ? (
+        <div className="mt-4 border border-danger-500/30 bg-danger-100 px-4 py-3 text-sm text-danger-500">
+          {error}
+        </div>
+      ) : null}
 
       <div className="mt-4">
         <DataTable<PortalPrintJob>
