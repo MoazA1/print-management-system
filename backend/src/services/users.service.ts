@@ -1,8 +1,9 @@
 import { query, transaction } from '../db/pool.js'
 import { ConflictError, ForbiddenError, NotFoundError } from '../lib/errors.js'
 import { hashPassword } from '../lib/jwt.js'
+import { recordAuditLog, recordAuditLogWithClient } from './audit-log.service.js'
 import { toPublicUser } from './user-shape.js'
-import type { PaginatedResult, UserRole } from '../types/api.js'
+import type { AuthenticatedUser, PaginatedResult, UserRole } from '../types/api.js'
 
 interface ListUsersFilters {
   search?: string
@@ -168,7 +169,7 @@ export async function listUserGroups() {
   return result.rows.map((row) => row.name)
 }
 
-export async function createUser(input: CreateUserInput) {
+export async function createUser(input: CreateUserInput, actor?: AuthenticatedUser) {
   const userUuid = await transaction(async (client) => {
     const existing = await client.query('SELECT id FROM users WHERE username = $1 OR email = $2', [
       input.username,
@@ -220,14 +221,32 @@ export async function createUser(input: CreateUserInput) {
       )
     }
 
+    await recordAuditLogWithClient(client, {
+      actor,
+      actionCategory: 'user',
+      actionType: 'create_user',
+      targetType: 'user',
+      targetId: String(user.rows[0].user_uuid),
+      afterState: {
+        username: input.username,
+        email: input.email,
+        displayName: input.displayName,
+        role: input.role,
+        groupName: input.groupName ?? null,
+        isSuspended: input.isSuspended ?? false,
+        allocatedPages: input.allocatedPages ?? 500,
+      },
+    })
+
     return String(user.rows[0].user_uuid)
   })
 
   return getUserByPublicId(userUuid)
 }
 
-export async function updateUser(publicId: string, input: UpdateUserInput) {
+export async function updateUser(publicId: string, input: UpdateUserInput, actor?: AuthenticatedUser) {
   await assertUserManagementTargetIsEditable(publicId)
+  const before = await getUserByPublicId(publicId)
   const userId = await getUserInternalId(publicId)
   const fields: string[] = []
   const params: unknown[] = []
@@ -291,25 +310,70 @@ export async function updateUser(publicId: string, input: UpdateUserInput) {
     })
   }
 
-  return getUserByPublicId(publicId)
+  const updatedUser = await getUserByPublicId(publicId)
+  await recordAuditLog({
+    actor,
+    actionCategory: 'user',
+    actionType: 'update_user',
+    targetType: 'user',
+    targetId: publicId,
+    beforeState: before,
+    afterState: updatedUser,
+  })
+
+  return updatedUser
 }
 
-export async function suspendUser(publicId: string) {
+export async function suspendUser(publicId: string, actor?: AuthenticatedUser) {
   await assertUserManagementTargetIsEditable(publicId)
+  const before = await getUserByPublicId(publicId)
   const userId = await getUserInternalId(publicId)
   await query('UPDATE users SET is_suspended = TRUE, updated_at = NOW() WHERE id = $1', [userId])
+  await recordAuditLog({
+    actor,
+    actionCategory: 'user',
+    actionType: 'suspend_user',
+    targetType: 'user',
+    targetId: publicId,
+    beforeState: before,
+    afterState: await getUserByPublicId(publicId),
+  })
 }
 
-export async function reactivateUser(publicId: string) {
+export async function reactivateUser(publicId: string, actor?: AuthenticatedUser) {
   await assertUserManagementTargetIsEditable(publicId)
+  const before = await getUserByPublicId(publicId)
   const userId = await getUserInternalId(publicId)
   await query('UPDATE users SET is_suspended = FALSE, is_active = TRUE, updated_at = NOW() WHERE id = $1', [userId])
+  await recordAuditLog({
+    actor,
+    actionCategory: 'user',
+    actionType: 'reactivate_user',
+    targetType: 'user',
+    targetId: publicId,
+    beforeState: before,
+    afterState: await getUserByPublicId(publicId),
+  })
 }
 
-export async function deleteUser(publicId: string) {
+export async function deleteUser(publicId: string, actor?: AuthenticatedUser) {
   await assertUserManagementTargetIsEditable(publicId)
+  const before = await getUserByPublicId(publicId)
   const userId = await getUserInternalId(publicId)
   await transaction(async (client) => {
+    await recordAuditLogWithClient(client, {
+      actor,
+      actionCategory: 'user',
+      actionType: 'delete_user',
+      targetType: 'user',
+      targetId: publicId,
+      beforeState: before,
+      afterState: {
+        deleted: true,
+        username: before.username,
+        displayName: before.display_name,
+      },
+    })
     await client.query('UPDATE technician_privileges SET updated_by = NULL WHERE updated_by = $1', [userId])
     await client.query('UPDATE user_quotas SET updated_by = NULL WHERE updated_by = $1', [userId])
     await client.query('UPDATE print_queues SET created_by = NULL WHERE created_by = $1', [userId])

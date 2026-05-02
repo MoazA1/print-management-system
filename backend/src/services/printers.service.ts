@@ -1,6 +1,7 @@
 import { query } from '../db/pool.js'
 import { ConflictError, NotFoundError } from '../lib/errors.js'
-import type { PaginatedResult } from '../types/api.js'
+import { recordAuditLog } from './audit-log.service.js'
+import type { AuthenticatedUser, PaginatedResult } from '../types/api.js'
 
 interface ListPrintersFilters {
   status?: string
@@ -117,7 +118,7 @@ export async function getPrinterById(id: string) {
   return toPrinter(result.rows[0])
 }
 
-export async function createPrinter(input: Required<Pick<PrinterInput, 'name'>> & PrinterInput) {
+export async function createPrinter(input: Required<Pick<PrinterInput, 'name'>> & PrinterInput, actor?: AuthenticatedUser) {
   const existing = await query('SELECT id FROM printers WHERE name = $1', [input.name])
   if (existing.rows.length > 0) {
     throw new ConflictError('Printer name already exists')
@@ -148,11 +149,22 @@ export async function createPrinter(input: Required<Pick<PrinterInput, 'name'>> 
     ],
   )
 
-  return getPrinterById(String(result.rows[0].printer_uuid))
+  const printer = await getPrinterById(String(result.rows[0].printer_uuid))
+
+  await recordAuditLog({
+    actor,
+    actionCategory: 'printer',
+    actionType: 'create_printer',
+    targetType: 'printer',
+    targetId: String(printer.id),
+    afterState: printer,
+  })
+
+  return printer
 }
 
-export async function updatePrinter(id: string, input: PrinterInput) {
-  await getPrinterInternalId(id)
+export async function updatePrinter(id: string, input: PrinterInput, actor?: AuthenticatedUser) {
+  const before = await getPrinterById(id)
   const fields: string[] = []
   const params: unknown[] = []
   const fieldMap = {
@@ -188,15 +200,39 @@ export async function updatePrinter(id: string, input: PrinterInput) {
     )
   }
 
-  return getPrinterById(id)
+  const printer = await getPrinterById(id)
+
+  await recordAuditLog({
+    actor,
+    actionCategory: 'printer',
+    actionType: 'update_printer',
+    targetType: 'printer',
+    targetId: String(printer.id),
+    beforeState: before,
+    afterState: printer,
+  })
+
+  return printer
 }
 
-export async function deletePrinter(id: string) {
+export async function deletePrinter(id: string, actor?: AuthenticatedUser) {
+  const before = await getPrinterById(id)
+
   await query(
     `UPDATE printers SET status = 'archived', updated_at = NOW()
      WHERE printer_uuid::text = $1 OR id::text = $1`,
     [id],
   )
+
+  await recordAuditLog({
+    actor,
+    actionCategory: 'printer',
+    actionType: 'delete_printer',
+    targetType: 'printer',
+    targetId: String(before.id),
+    beforeState: before,
+    afterState: { ...before, status: 'archived' },
+  })
 }
 
 export async function getPrinterErrors(id: string) {

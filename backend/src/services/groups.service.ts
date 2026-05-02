@@ -2,8 +2,9 @@ import type { QueryResultRow } from 'pg'
 import type { PoolClient } from 'pg'
 import { query, transaction } from '../db/pool.js'
 import { ConflictError, NotFoundError } from '../lib/errors.js'
+import { recordAuditLog, recordAuditLogWithClient } from './audit-log.service.js'
 import { toPublicUser } from './user-shape.js'
-import type { PaginatedResult } from '../types/api.js'
+import type { AuthenticatedUser, PaginatedResult } from '../types/api.js'
 
 type GroupPeriod = 'Weekly' | 'Monthly' | 'Semester'
 
@@ -175,7 +176,7 @@ export async function listGroupUsers(
   }
 }
 
-export async function createGroup(input: GroupInput) {
+export async function createGroup(input: GroupInput, actor?: AuthenticatedUser) {
   const groupUuid = await transaction(async (client) => {
     const existing = await client.query('SELECT id FROM ad_groups WHERE name = $1', [input.name])
 
@@ -210,13 +211,29 @@ export async function createGroup(input: GroupInput) {
       await setSingleDefaultGroup(client, groupId)
     }
 
+    await recordAuditLogWithClient(client, {
+      actor,
+      actionCategory: 'group',
+      actionType: 'create_group',
+      targetType: 'group',
+      targetId: String(result.rows[0].group_uuid),
+      afterState: {
+        name: input.name,
+        description: input.description ?? '',
+        quotaPeriod: input.quotaPeriod,
+        initialBalance: input.initialBalance,
+        initialRestriction: input.initialRestriction,
+        defaultForNewUsers: input.defaultForNewUsers,
+      },
+    })
+
     return String(result.rows[0].group_uuid)
   })
 
   return getGroupByPublicId(groupUuid)
 }
 
-export async function updateGroup(publicId: string, input: GroupInput) {
+export async function updateGroup(publicId: string, input: GroupInput, actor?: AuthenticatedUser) {
   const group = await getGroupByPublicId(publicId)
   const updatedUuid = await transaction(async (client) => {
     const duplicate = await client.query(
@@ -270,13 +287,36 @@ export async function updateGroup(publicId: string, input: GroupInput) {
     return String(result.rows[0].group_uuid)
   })
 
-  return getGroupByPublicId(updatedUuid)
+  const updatedGroup = await getGroupByPublicId(updatedUuid)
+  await recordAuditLog({
+    actor,
+    actionCategory: 'group',
+    actionType: 'update_group',
+    targetType: 'group',
+    targetId: updatedGroup.id,
+    beforeState: group,
+    afterState: updatedGroup,
+  })
+
+  return updatedGroup
 }
 
-export async function deleteGroup(publicId: string) {
+export async function deleteGroup(publicId: string, actor?: AuthenticatedUser) {
   const group = await getGroupByPublicId(publicId)
 
   await transaction(async (client) => {
+    await recordAuditLogWithClient(client, {
+      actor,
+      actionCategory: 'group',
+      actionType: 'delete_group',
+      targetType: 'group',
+      targetId: publicId,
+      beforeState: group,
+      afterState: {
+        deleted: true,
+        name: group.name,
+      },
+    })
     await client.query(
       `DELETE FROM queue_access_rules
        WHERE rule_type = 'ad_group' AND rule_value = $1`,

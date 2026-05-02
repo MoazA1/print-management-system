@@ -38,7 +38,7 @@ router.get('/', validateQuery(listSchema), async (req, res) => {
 })
 
 router.post('/', requireRole('admin'), validateBody(createSchema), async (req, res) => {
-  created(res, await printersService.createPrinter(req.body as z.infer<typeof createSchema>))
+  created(res, await printersService.createPrinter(req.body as z.infer<typeof createSchema>, req.user))
 })
 
 router.get('/:id', async (req, res) => {
@@ -46,11 +46,11 @@ router.get('/:id', async (req, res) => {
 })
 
 router.patch('/:id', requireRole('admin', 'technician'), validateBody(createSchema.partial()), async (req, res) => {
-  ok(res, await printersService.updatePrinter(String(req.params.id), req.body as z.infer<typeof createSchema>))
+  ok(res, await printersService.updatePrinter(String(req.params.id), req.body as z.infer<typeof createSchema>, req.user))
 })
 
 router.delete('/:id', requireRole('admin'), async (req, res) => {
-  await printersService.deletePrinter(String(req.params.id))
+  await printersService.deletePrinter(String(req.params.id), req.user)
   noContent(res)
 })
 

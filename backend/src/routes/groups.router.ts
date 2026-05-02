@@ -35,7 +35,7 @@ router.get('/', requireRole('admin', 'technician'), validateQuery(listSchema), a
 })
 
 router.post('/', requireRole('admin'), validateBody(groupSchema), async (req, res) => {
-  created(res, await groupsService.createGroup(req.body as z.infer<typeof groupSchema>))
+  created(res, await groupsService.createGroup(req.body as z.infer<typeof groupSchema>, req.user))
 })
 
 router.get('/:id/users', requireRole('admin', 'technician'), validateQuery(listGroupUsersSchema), async (req, res) => {
@@ -48,11 +48,11 @@ router.get('/:id', requireRole('admin', 'technician'), async (req, res) => {
 })
 
 router.patch('/:id', requireRole('admin'), validateBody(groupSchema), async (req, res) => {
-  ok(res, await groupsService.updateGroup(String(req.params.id), req.body as z.infer<typeof groupSchema>))
+  ok(res, await groupsService.updateGroup(String(req.params.id), req.body as z.infer<typeof groupSchema>, req.user))
 })
 
 router.delete('/:id', requireRole('admin'), async (req, res) => {
-  await groupsService.deleteGroup(String(req.params.id))
+  await groupsService.deleteGroup(String(req.params.id), req.user)
   noContent(res)
 })
 

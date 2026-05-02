@@ -1,34 +1,94 @@
 import { Trash2 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
+import { toast } from 'sonner'
 import { PageHeader } from '@/components/composite/page-header'
 import { SectionTabs } from '@/components/composite/section-tabs'
+import { listGroups } from '@/features/admin/groups/api'
+import { listPrinters } from '@/features/admin/printers/api'
 import { isQueueDeleteBlocked } from '@/lib/status'
-import { getQueueByIdOrUndefined, listQueuePrinters, removeQueue, saveQueue } from './api'
+import { getQueueByIdOrUndefined, removeQueue, saveQueue, type QueueMutationInput } from './api'
 import { QueueAssignmentsPanel } from './components/queue-assignments-panel'
 import { QueueConfigurationPanel } from './components/queue-configuration-panel'
 import { QueueDeleteReview } from './components/queue-delete-review'
 import { QueueLogPanel } from './components/queue-log-panel'
-import type { AdminQueue } from '@/types/admin'
+import type { AdminGroup, AdminPrinter, AdminQueue } from '@/types/admin'
 
 export function QueueDetailScreen() {
   const navigate = useNavigate()
   const { queueId } = useParams()
-  const queue = getQueueByIdOrUndefined(queueId)
+  const [queue, setQueue] = useState<AdminQueue | undefined>()
+  const [printers, setPrinters] = useState<AdminPrinter[]>([])
+  const [groups, setGroups] = useState<AdminGroup[]>([])
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    setLoaded(false)
+
+    Promise.all([
+      getQueueByIdOrUndefined(queueId),
+      listPrinters({ limit: 100 }),
+      listGroups({ limit: 100 }),
+    ])
+      .then(([nextQueue, nextPrinters, nextGroups]) => {
+        if (!cancelled) {
+          setQueue(nextQueue)
+          setPrinters(nextPrinters)
+          setGroups(nextGroups)
+          setLoaded(true)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setQueue(undefined)
+          setLoaded(true)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [queueId])
+
+  if (!loaded) {
+    return <div className="ui-panel px-4 py-6 text-sm text-slate-500">Loading queue...</div>
+  }
 
   if (!queue) {
     return <Navigate to="/admin/queues" replace />
   }
 
-  return <QueueDetailView key={queue.id} queue={queue} onBack={() => navigate('/admin/queues')} />
+  return (
+    <QueueDetailView
+      key={queue.id}
+      groups={groups}
+      printers={printers}
+      queue={queue}
+      onBack={() => navigate('/admin/queues')}
+      onQueueChange={setQueue}
+    />
+  )
 }
 
-function QueueDetailView({ queue, onBack }: { queue: AdminQueue; onBack: () => void }) {
+function QueueDetailView({
+  groups,
+  onBack,
+  onQueueChange,
+  printers,
+  queue,
+}: {
+  groups: AdminGroup[]
+  onBack: () => void
+  onQueueChange: (queue: AdminQueue) => void
+  printers: AdminPrinter[]
+  queue: AdminQueue
+}) {
   const [activeTab, setActiveTab] = useState('Policy')
   const [form, setForm] = useState(queue)
   const [saveMessage, setSaveMessage] = useState('')
   const [deleteReviewOpen, setDeleteReviewOpen] = useState(false)
-  const assignedPrinters = listQueuePrinters().filter((printer) => form.printerIds.includes(printer.id))
+  const assignedPrinters = printers.filter((printer) => form.printerIds.includes(printer.id))
   const openLogCount = form.queueLogs.filter((entry) => entry.state === 'Open').length
   const canDelete = !isQueueDeleteBlocked(form)
 
@@ -47,27 +107,46 @@ function QueueDetailView({ queue, onBack }: { queue: AdminQueue; onBack: () => v
   }
 
   function resetForm() {
-    const freshQueue = getQueueByIdOrUndefined(queue.id)
-    setForm(freshQueue ?? queue)
+    setForm(queue)
     setSaveMessage('')
     setDeleteReviewOpen(false)
   }
 
-  function handleApply() {
-    const nextForm = { ...form, status: form.enabled ? form.status : 'Offline' }
-    saveQueue(nextForm)
-    setForm(nextForm)
-    setSaveMessage('Queue changes saved to the mock admin store.')
+  async function handleApply() {
+    const input = toQueueMutationInput(form)
+
+    try {
+      const updatedQueue = await saveQueue(queue.id, input)
+      setForm(updatedQueue)
+      onQueueChange(updatedQueue)
+      setSaveMessage('Queue changes saved to the database.')
+      toast.success('Queue has been updated', {
+        description: `${updatedQueue.name}'s changes were saved to the database.`,
+      })
+    } catch (error) {
+      toast.error('Unable to save queue', {
+        description: error instanceof Error ? error.message : 'Please try again.',
+      })
+    }
   }
 
-  function handleDelete() {
+  async function handleDelete() {
     if (!canDelete) {
       setDeleteReviewOpen(true)
       return
     }
 
-    removeQueue(form.id)
-    onBack()
+    try {
+      await removeQueue(form.id)
+      toast.success('Queue removed', {
+        description: `${form.name} was removed from active queue management.`,
+      })
+      onBack()
+    } catch (error) {
+      toast.error('Unable to delete queue', {
+        description: error instanceof Error ? error.message : 'Please try again.',
+      })
+    }
   }
 
   return (
@@ -75,7 +154,7 @@ function QueueDetailView({ queue, onBack }: { queue: AdminQueue; onBack: () => v
       <PageHeader
         eyebrow="Queues"
         title={`Queue details: ${form.name}`}
-        description={`${form.audience} access on ${form.hostedOn}`}
+        description={`${form.audience} access / ${form.releaseMode}`}
         meta={
           <>
             <button type="button" className="ui-button-secondary" onClick={onBack}>
@@ -98,8 +177,22 @@ function QueueDetailView({ queue, onBack }: { queue: AdminQueue; onBack: () => v
       <SectionTabs tabs={['Policy', 'Assignments', 'Activity']} activeTab={activeTab} onChange={setActiveTab} />
 
       {activeTab === 'Policy' ? <QueueConfigurationPanel form={form} onApply={handleApply} onReset={resetForm} saveMessage={saveMessage} updateForm={updateForm} /> : null}
-      {activeTab === 'Assignments' ? <QueueAssignmentsPanel assignedPrinters={assignedPrinters} form={form} onApply={handleApply} onReviewLog={() => setActiveTab('Activity')} toggleAssignment={toggleAssignment} /> : null}
+      {activeTab === 'Assignments' ? <QueueAssignmentsPanel assignedPrinters={assignedPrinters} form={form} groups={groups} onApply={handleApply} onReviewLog={() => setActiveTab('Activity')} printers={printers} toggleAssignment={toggleAssignment} /> : null}
       {activeTab === 'Activity' ? <QueueLogPanel canDelete={canDelete} form={form} openLogCount={openLogCount} /> : null}
     </div>
   )
+}
+
+function toQueueMutationInput(queue: AdminQueue): QueueMutationInput {
+  return {
+    name: queue.name,
+    description: queue.description,
+    status: queue.enabled ? queue.status : 'Offline',
+    releaseMode: queue.releaseMode,
+    audience: queue.audience,
+    retentionHours: queue.autoDeleteAfterHours,
+    costPerPage: queue.costPerPage,
+    printerIds: queue.printerIds,
+    allowedGroups: queue.allowedGroups,
+  }
 }

@@ -44,7 +44,7 @@ router.get('/', requireRole('admin', 'technician'), validateQuery(listSchema), a
 })
 
 router.post('/', requireRole('admin'), validateBody(createSchema), async (req, res) => {
-  created(res, await usersService.createUser(req.body as z.infer<typeof createSchema>))
+  created(res, await usersService.createUser(req.body as z.infer<typeof createSchema>, req.user))
 })
 
 router.get('/groups', requireRole('admin', 'technician'), async (_req, res) => {
@@ -57,28 +57,28 @@ router.get('/:id', async (req, res) => {
 })
 
 router.patch('/:id', requireRole('admin'), validateBody(updateSchema), async (req, res) => {
-  ok(res, await usersService.updateUser(String(req.params.id), req.body as z.infer<typeof updateSchema>))
+  ok(res, await usersService.updateUser(String(req.params.id), req.body as z.infer<typeof updateSchema>, req.user))
 })
 
 router.post('/:id/suspend', requireRole('admin', 'technician'), async (req, res) => {
   await usersService.assertTechnicianCanManageTarget(req.user!.roles, String(req.params.id))
-  await usersService.suspendUser(String(req.params.id))
+  await usersService.suspendUser(String(req.params.id), req.user)
   ok(res, { message: 'User suspended' })
 })
 
 router.post('/:id/reactivate', requireRole('admin', 'technician'), async (req, res) => {
   await usersService.assertTechnicianCanManageTarget(req.user!.roles, String(req.params.id))
-  await usersService.reactivateUser(String(req.params.id))
+  await usersService.reactivateUser(String(req.params.id), req.user)
   ok(res, { message: 'User reactivated' })
 })
 
 router.patch('/:id/quota', requireRole('admin', 'technician'), validateBody(z.object({ allocatedPages: z.number().int().min(0) })), async (req, res) => {
   await usersService.assertTechnicianCanManageTarget(req.user!.roles, String(req.params.id))
-  ok(res, await usersService.updateUser(String(req.params.id), { allocatedPages: req.body.allocatedPages }))
+  ok(res, await usersService.updateUser(String(req.params.id), { allocatedPages: req.body.allocatedPages }, req.user))
 })
 
 router.delete('/:id', requireRole('admin'), async (req, res) => {
-  await usersService.deleteUser(String(req.params.id))
+  await usersService.deleteUser(String(req.params.id), req.user)
   noContent(res)
 })
 
