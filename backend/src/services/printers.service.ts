@@ -12,9 +12,12 @@ interface ListPrintersFilters {
 interface PrinterInput {
   name?: string
   model?: string
+  hostedOn?: string
   ipAddress?: string
   location?: string
   status?: 'online' | 'offline' | 'maintenance' | 'disabled'
+  releaseMode?: 'secure_release' | 'immediate'
+  tonerLevel?: number
   isColor?: boolean
   supportsDuplex?: boolean
   serialNumber?: string
@@ -37,11 +40,25 @@ export async function listPrinters(filters: ListPrintersFilters): Promise<Pagina
 
   if (filters.search) {
     params.push(`%${filters.search}%`)
-    conditions.push(`(p.name ILIKE $${params.length} OR p.model ILIKE $${params.length} OR p.location ILIKE $${params.length})`)
+    conditions.push(`(
+      p.name ILIKE $${params.length}
+      OR p.hosted_on ILIKE $${params.length}
+      OR p.model ILIKE $${params.length}
+      OR p.location ILIKE $${params.length}
+      OR p.serial_number ILIKE $${params.length}
+      OR q.name ILIKE $${params.length}
+    )`)
   }
 
   const where = conditions.join(' AND ')
-  const count = await query<{ count: string }>(`SELECT COUNT(*)::text AS count FROM printers p WHERE ${where}`, params)
+  const count = await query<{ count: string }>(
+    `SELECT COUNT(DISTINCT p.id)::text AS count
+     FROM printers p
+     LEFT JOIN queue_printers qp ON qp.printer_id = p.id AND qp.is_enabled = TRUE
+     LEFT JOIN print_queues q ON q.id = qp.queue_id
+     WHERE ${where}`,
+    params,
+  )
 
   params.push(limit, offset)
   const result = await query(
@@ -50,7 +67,9 @@ export async function listPrinters(filters: ListPrintersFilters): Promise<Pagina
         q.name AS queue_name,
         q.queue_uuid,
         COUNT(DISTINCT pj.id) FILTER (WHERE pj.status = 'held') AS pending_jobs,
-        COUNT(DISTINCT pj.id) FILTER (WHERE pj.status = 'sent_to_printer' AND pj.released_at::date = CURRENT_DATE) AS released_today
+        COUNT(DISTINCT pj.id) FILTER (WHERE pj.status = 'sent_to_printer' AND pj.released_at::date = CURRENT_DATE) AS released_today,
+        COALESCE(SUM(pj.page_count * pj.copy_count), 0)::int AS total_pages,
+        COUNT(DISTINCT pj.id)::int AS total_jobs
      FROM printers p
      LEFT JOIN queue_printers qp ON qp.printer_id = p.id AND qp.is_enabled = TRUE
      LEFT JOIN print_queues q ON q.id = qp.queue_id
@@ -79,7 +98,9 @@ export async function getPrinterById(id: string) {
         q.name AS queue_name,
         q.queue_uuid,
         COUNT(DISTINCT pj.id) FILTER (WHERE pj.status = 'held') AS pending_jobs,
-        COUNT(DISTINCT pj.id) FILTER (WHERE pj.status = 'sent_to_printer' AND pj.released_at::date = CURRENT_DATE) AS released_today
+        COUNT(DISTINCT pj.id) FILTER (WHERE pj.status = 'sent_to_printer' AND pj.released_at::date = CURRENT_DATE) AS released_today,
+        COALESCE(SUM(pj.page_count * pj.copy_count), 0)::int AS total_pages,
+        COUNT(DISTINCT pj.id)::int AS total_jobs
      FROM printers p
      LEFT JOIN queue_printers qp ON qp.printer_id = p.id AND qp.is_enabled = TRUE
      LEFT JOIN print_queues q ON q.id = qp.queue_id
@@ -104,20 +125,24 @@ export async function createPrinter(input: Required<Pick<PrinterInput, 'name'>> 
 
   const result = await query<{ printer_uuid: string }>(
     `INSERT INTO printers (
-       name, model, ip_address, location, status, is_color, supports_duplex,
-       serial_number, connector_type, connector_target
+       name, model, hosted_on, ip_address, location, status, release_mode, toner_level,
+       is_color, supports_duplex, serial_number, notes, connector_type, connector_target
      )
-     VALUES ($1, $2, NULLIF($3, '')::inet, $4, $5, $6, $7, $8, $9, $10)
+     VALUES ($1, $2, $3, NULLIF($4, '')::inet, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
      RETURNING printer_uuid`,
     [
       input.name,
       input.model ?? null,
+      input.hostedOn ?? null,
       input.ipAddress ?? '',
       input.location ?? null,
       input.status ?? 'online',
+      input.releaseMode ?? 'secure_release',
+      input.tonerLevel ?? 100,
       input.isColor ?? false,
       input.supportsDuplex ?? true,
       input.serialNumber ?? null,
+      input.notes ?? '',
       input.connectorType ?? 'raw_socket',
       input.connectorTarget ?? null,
     ],
@@ -133,9 +158,12 @@ export async function updatePrinter(id: string, input: PrinterInput) {
   const fieldMap = {
     name: input.name,
     model: input.model,
+    hosted_on: input.hostedOn,
     ip_address: input.ipAddress,
     location: input.location,
     status: input.status,
+    release_mode: input.releaseMode,
+    toner_level: input.tonerLevel,
     is_color: input.isColor,
     supports_duplex: input.supportsDuplex,
     serial_number: input.serialNumber,
@@ -201,12 +229,14 @@ function toPrinter(row: Record<string, unknown>) {
     name: String(row.name),
     device_code: row.device_code ? String(row.device_code) : null,
     model: row.model ? String(row.model) : null,
+    hosted_on: row.hosted_on ? String(row.hosted_on) : null,
     ip_address: row.ip_address ? String(row.ip_address) : null,
     connector_type: String(row.connector_type),
     connector_target: row.connector_target ? String(row.connector_target) : null,
     connector_options: row.connector_options ?? {},
     location: row.location ? String(row.location) : null,
     status: String(row.status),
+    release_mode: row.release_mode ? String(row.release_mode) : 'secure_release',
     is_color: Boolean(row.is_color),
     supports_duplex: Boolean(row.supports_duplex),
     serial_number: row.serial_number ? String(row.serial_number) : null,
@@ -215,7 +245,9 @@ function toPrinter(row: Record<string, unknown>) {
     queue_id: row.queue_uuid ? String(row.queue_uuid) : null,
     pending_jobs: Number(row.pending_jobs ?? 0),
     released_today: Number(row.released_today ?? 0),
-    toner_level: row.toner_level ? Number(row.toner_level) : 100,
+    total_pages: Number(row.total_pages ?? 0),
+    total_jobs: Number(row.total_jobs ?? 0),
+    toner_level: row.toner_level !== null && row.toner_level !== undefined ? Number(row.toner_level) : 100,
     created_at: row.created_at,
     updated_at: row.updated_at,
   }

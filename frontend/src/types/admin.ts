@@ -45,6 +45,9 @@ export interface AdminPrinter {
   status: 'Online' | 'Offline' | 'Maintenance'
   pendingJobs: number
   releasedToday: number
+  totalPages: number
+  totalJobs: number
+  isColor: boolean
   toner: number
   holdReleaseMode: 'Secure Release' | 'Immediate'
   failureMode: 'Hold until redirected' | 'Retry then notify' | 'Cancel and notify'

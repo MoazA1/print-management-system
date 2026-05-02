@@ -18,9 +18,12 @@ const listSchema = z.object({
 const createSchema = z.object({
   name: z.string().min(1).max(150),
   model: z.string().max(150).optional(),
+  hostedOn: z.string().max(255).optional(),
   ipAddress: z.string().max(45).optional(),
   location: z.string().max(255).optional(),
   status: z.enum(['online', 'offline', 'maintenance', 'disabled']).optional(),
+  releaseMode: z.enum(['secure_release', 'immediate']).optional(),
+  tonerLevel: z.number().int().min(0).max(100).optional(),
   isColor: z.boolean().optional(),
   supportsDuplex: z.boolean().optional(),
   serialNumber: z.string().max(255).optional(),
