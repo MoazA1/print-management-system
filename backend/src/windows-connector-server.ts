@@ -63,7 +63,7 @@ function requireConnectorToken(req: express.Request, res: express.Response, next
   next()
 }
 
-app.use(cors({ origin: config.frontendOrigin }))
+app.use(cors({ origin: config.frontendOrigins }))
 app.use(express.json())
 
 app.get('/health', (_req, res) => {

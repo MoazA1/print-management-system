@@ -1,134 +1,199 @@
 # Print Management System
 
-Print Management System is a university-focused web application being built to replace PaperCut with an in-house solution. The project focuses on secure pull printing, quota control, printer and queue management, auditability, and admin visibility across the print workflow.
+Print Management System is a university-focused web application being built as an in-house replacement for PaperCut. The project targets pull printing, quota control, printer and queue management, auditability, admin visibility, and technician error handling.
 
-This milestone submission covers the front-end prototype built with React, TypeScript, Vite, and Tailwind CSS. The current prototype demonstrates the main user-facing and admin-facing flows using mock data while backend integration is still pending.
+The current codebase is now a full-stack MVP foundation, not only a frontend prototype. It includes a React frontend, a TypeScript/Express backend, PostgreSQL migrations, DB-backed authentication for development, job submission/history, admin management flows, technician flows, logs, queues, groups, printers, and diagnostic printer delivery paths.
 
-## Front-End Scope
+## Current State
 
-The prototype currently includes:
+Implemented at a high level:
 
-- Standard user portal screens for dashboard, submit job, and print history
-- Admin screens for dashboard, users, groups, printers, queues, devices, reports, options, logs, and about
-- Technician screens for dashboard, users, printers, and alerts
-- Interactive navigation, detail pages, filters, forms, tables, status indicators, and queue-management flows
-- Responsive layouts for desktop and smaller screens
+- DB-backed sign-in using seeded development credentials and JWT sessions.
+- Standard-user portal for dashboard, job submission, job history, and cancellation of pending jobs.
+- Admin pages for dashboard, users, groups, printers, queues, logs, and management workflows.
+- Technician pages for dashboard, users, printers, and alert handling.
+- PostgreSQL schema and migrations for users, roles, quotas, printers, queues, queue assignments, jobs, job files, job events, logs, alerts, and seeded demo data.
+- Diagnostic print delivery through raw socket printing and a Windows queue connector.
+
+Still not implemented:
+
+- Active Directory login and identity sync.
+- Printer-panel secure release / real pull-print authentication.
+- Reliable physical print completion telemetry from printers.
+- Production cleanup for expired held jobs and stored files.
 
 ## Tech Stack
 
-- React
-- TypeScript
-- Vite
-- Tailwind CSS
-- React Router
-- Radix UI primitives
+- Frontend: React, TypeScript, Vite, React Router, Tailwind CSS, Radix UI primitives.
+- Backend: TypeScript, Express, `pg`, plain SQL migrations.
+- Database: PostgreSQL.
+- Print diagnostics: Ghostscript for PDF-to-PostScript conversion, raw TCP socket printing, and a Windows queue connector spike.
 
 ## Project Structure
 
 ```text
 print-management-system/
-├── frontend/          # React front-end application
-├── docs/              # Architecture and database notes
-├── SSO Test 1.py      # Temporary auth reference file
-├── AGENTS.md          # Shared project memory
+├── frontend/          # React frontend application
+├── backend/           # Express API, migrations, print connectors
+├── docs/              # Project plan, database plan, architecture notes
+├── AGENTS.md          # Current shared project memory
 └── README.md
 ```
 
-Inside `frontend/src/`, the code is organized feature-first:
+Important frontend locations:
 
-- `app/` for app shell and routing
-- `features/` for admin, portal, and technician modules
-- `components/` for shared UI and composite components
-- `lib/` for utilities and helpers
-- `mocks/` for mock data stores
+- `frontend/src/app/` for routing and shell layouts.
+- `frontend/src/features/` for admin, portal, and technician modules.
+- `frontend/src/components/` for shared and page-specific UI components.
+- `frontend/src/lib/api.ts` for the backend API client.
 
-## Setup and Installation
+Important backend locations:
 
-### Prerequisites
+- `backend/src/server.ts` for the main API server.
+- `backend/src/routes/` for `/api` and `/dev` routes.
+- `backend/src/services/` for business logic.
+- `backend/src/db/` for PostgreSQL pool and migration runner.
+- `backend/migrations/` for SQL migrations.
 
-- Node.js 20+ recommended
-- npm 10+ recommended
+## Local Setup
 
-### Run Locally
+Prerequisites:
+
+- Node.js 20+ for local development.
+- npm 10+.
+- Docker Desktop, or another local PostgreSQL instance.
+- Ghostscript if testing raw socket PDF printing.
+
+Install dependencies:
 
 ```bash
-cd frontend
+cd backend
 npm install
+
+cd ../frontend
+npm install
+```
+
+Start PostgreSQL and apply migrations:
+
+```bash
+cd backend
+docker compose up -d postgres
+npm run db:migrate
+```
+
+Start the backend:
+
+```bash
+cd backend
 npm run dev
 ```
 
-The development server will start with Vite and print a local URL in the terminal.
+Start the frontend:
 
-### Production Build
+```bash
+cd frontend
+npm run dev -- --host 127.0.0.1 --port 5173 --strictPort
+```
+
+Open:
+
+```text
+http://127.0.0.1:5173
+```
+
+Use `127.0.0.1` instead of `localhost` if another Vite app is running locally.
+
+## Development Credentials
+
+All seeded development users use password:
+
+```text
+123456
+```
+
+Seeded accounts:
+
+- `admin@university.edu`
+- `tech@university.edu`
+- `student@university.edu`
+
+This is temporary DB-backed development auth. The final target is Active Directory authentication with local PostgreSQL records still owning app roles, suspensions, quotas, technician privileges, and audit history.
+
+## Main API Surface
+
+The frontend uses backend routes under `/api`.
+
+Key route groups:
+
+- Auth: `/api/auth/*`
+- Portal: `/api/portal/*`
+- Jobs: `/api/jobs/*`
+- Admin/technician management: `/api/users`, `/api/printers`, `/api/queues`, `/api/groups`, `/api/alerts`, `/api/logs`, `/api/dashboard`
+
+Diagnostic print routes live under `/dev/*`. They are useful for hardware testing but should not be treated as the normal product flow.
+
+## Print Delivery Notes
+
+Normal product flow should go through the job lifecycle:
+
+```text
+portal/backend client -> POST /api/jobs -> held DB job -> release action -> connector boundary
+```
+
+Diagnostic paths currently available:
+
+- `/dev/print-direct`: converts PDF to PostScript and sends bytes directly to the HP printer over TCP port `9100`.
+- `/dev/print-windows-queue`: forwards a PDF to the Windows connector, which submits it to a Windows print queue.
+
+These paths prove connector submission. They do not prove final physical completion, toner/paper state, jam state, or printer-panel authentication.
+
+See `backend/README.md` for connector-specific setup and test commands.
+
+## Validation Commands
+
+Backend:
+
+```bash
+cd backend
+npm run build
+npm run typecheck
+```
+
+Frontend:
 
 ```bash
 cd frontend
 npm run build
-```
-
-### Linting
-
-```bash
-cd frontend
 npm run lint
 ```
 
-## Usage
+Database migrations:
 
-After starting the front end, open the local Vite URL and use the available routes:
+```bash
+cd backend
+npm run db:migrate
+```
 
-- `/sign-in`
-- `/portal/dashboard`
-- `/portal/submit-job`
-- `/portal/history`
-- `/admin/dashboard`
-- `/admin/users`
-- `/admin/groups`
-- `/admin/printers`
-- `/admin/queues`
-- `/tech/dashboard`
+## Documentation
 
-The current milestone uses mock data to simulate user actions and interface behavior.
+Use these documents for current project decisions:
 
-## Mock Authentication (Current)
-
-The prototype currently uses a mock authentication layer designed to be replaced later with SSO/Active Directory.
-
-- Session is stored in `localStorage` under `auth_user`
-- Passwords are only used in the mock store and are not saved in session
-- Login redirects by role:
-	- `Administrator` -> `/admin/dashboard`
-	- `Technician` -> `/tech/dashboard`
-	- `Student` / `Faculty` -> `/portal/dashboard`
-
-### Test Credentials
-
-All mock users use password: `123456`
-
-- `admin@university.edu` (Administrator)
-- `tech@university.edu` (Technician)
-- `student@university.edu` (Student)
-- `faculty@university.edu` (Faculty)
-- `suspended@university.edu` (Suspended account, login blocked)
-
-## Portal User-Aware Mock Data
-
-Portal pages now resolve profile and job history from the authenticated user.
-
-- `Student` and `Faculty` users now see user-specific portal profile data
-- Portal job lists are filtered by the logged-in portal user
-- New submitted jobs are stored with the current portal user's id
-- Printers and queues remain shared static mock data for this milestone
+- `AGENTS.md`: current shared project memory and constraints.
+- `docs/project-todo.md`: execution plan and remaining work.
+- `docs/backend-database-plan.md`: database requirements and design notes.
+- `docs/architecture.md`: architecture boundaries and connector strategy.
+- `docs/schema.sql`: reference SQL snapshot; backend migrations are the implementation source of truth.
 
 ## Team Members and Roles
 
-- `Mohammed Ammar Sohail` - `Backend + Embedded devices`
-- `Ahmed Alnasser` - `Backend + Embedded Deviced / Responsibility`
-- `Moaz Ahmed` - `Frontend + UI/UX Design`
-- `Ayman Musalli` - `Frontend + UI/UX Design`
+- `Mohammed Ammar Sohail` - Backend + embedded/device integration.
+- `Ahmed Alnasser` - Backend + embedded/device integration.
+- `Moaz Ahmed` - Frontend + UI/UX design.
+- `Ayman Musalli` - Frontend + UI/UX design.
 
 ## Notes
 
-- This repository currently focuses on the front-end milestone and prototype behavior.
-- Backend integration, Active Directory setup, and real printer release flow are planned separately.
-- Environment secrets and production credentials are not included in this repository.
+- Do not commit production credentials, VM credentials, printer passwords, or AD secrets.
+- Keep uploaded and converted print files outside PostgreSQL. The database stores paths, hashes, metadata, expiry, and deletion timestamps.
+- Direct raw socket printing and Windows queue submission are not the same as secure pull printing.
