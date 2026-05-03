@@ -187,10 +187,9 @@ Use these documents for current project decisions:
 
 ## Team Members and Roles
 
-- `Mohammed Ammar Sohail` - Backend + embedded/device integration.
-- `Ahmed Alnasser` - Backend + embedded/device integration.
-- `Moaz Ahmed` - Frontend + UI/UX design.
-- `Ayman Musalli` - Frontend + UI/UX design.
+- `Mohammed Ammar Sohail` - Frontend + Backend + embedded/device integration.
+- `Moaz Ahmed` - SRS Documentation + Frontend Configuration + Bakcend & DB.
+- `Ayman Musalli` - UI/UX design + Authentication.
 
 ## Notes
 
