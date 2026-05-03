@@ -17,7 +17,7 @@ The current codebase is now a full-stack MVP foundation, not only a frontend pro
 ![Screenshot 7](Snapshots/7.png)
 ![Screenshot 8](Snapshots/8.png)
 ![Screenshot 9](Snapshots/9.png)
-![Screenshot 10](Ssnapshots/10.png)
+![Screenshot 10](Snapshots/10.png)
 ![Screenshot 11](Snapshots/11.png)
 
 ## Current State
