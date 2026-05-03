@@ -8,17 +8,17 @@ The current codebase is now a full-stack MVP foundation, not only a frontend pro
 
 ### Application Interface
 
-![Screenshot 1](snapshots/1.png)
-![Screenshot 2](snapshots/2.png)
-![Screenshot 3](snapshots/3.png)
-![Screenshot 4](snapshots/4.png)
-![Screenshot 5](snapshots/5.png)
-![Screenshot 6](snapshots/6.png)
-![Screenshot 7](snapshots/7.png)
-![Screenshot 8](snapshots/8.png)
-![Screenshot 9](snapshots/9.png)
-![Screenshot 10](snapshots/10.png)
-![Screenshot 11](snapshots/11.png)
+![Screenshot 1](Print-Management-System-Snapshots/snapshots/1.png)
+![Screenshot 2](Print-Management-System-Snapshots/snapshots/2.png)
+![Screenshot 3](Print-Management-System-Snapshots/snapshots/3.png)
+![Screenshot 4](Print-Management-System-Snapshots/snapshots/4.png)
+![Screenshot 5](Print-Management-System-Snapshots/snapshots/5.png)
+![Screenshot 6](Print-Management-System-Snapshots/snapshots/6.png)
+![Screenshot 7](Print-Management-System-Snapshots/snapshots/7.png)
+![Screenshot 8](Print-Management-System-Snapshots/snapshots/8.png)
+![Screenshot 9](Print-Management-System-Snapshots/snapshots/9.png)
+![Screenshot 10](Print-Management-System-Snapshots/snapshots/10.png)
+![Screenshot 11](Print-Management-System-Snapshots/snapshots/11.png)
 
 ## Current State
 
