@@ -8,17 +8,17 @@ The current codebase is now a full-stack MVP foundation, not only a frontend pro
 
 ### Application Interface
 
-![Screenshot 1](snapshots/1.png)
-![Screenshot 2](snapshots/2.png)
-![Screenshot 3](snapshots/3.png)
-![Screenshot 4](snapshots/4.png)
-![Screenshot 5](snapshots/5.png)
-![Screenshot 6](snapshots/6.png)
-![Screenshot 7](snapshots/7.png)
-![Screenshot 8](snapshots/8.png)
-![Screenshot 9](snapshots/9.png)
-![Screenshot 10](snapshots/10.png)
-![Screenshot 11](snapshots/11.png)
+![Screenshot 1](Snapshots/1.png)
+![Screenshot 2](Snapshots/2.png)
+![Screenshot 3](Snapshots/3.png)
+![Screenshot 4](Snapshots/4.png)
+![Screenshot 5](Snapshots/5.png)
+![Screenshot 6](Snapshots/6.png)
+![Screenshot 7](Snapshots/7.png)
+![Screenshot 8](Snapshots/8.png)
+![Screenshot 9](Snapshots/9.png)
+![Screenshot 10](Ssnapshots/10.png)
+![Screenshot 11](Snapshots/11.png)
 
 ## Current State
 
