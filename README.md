@@ -4,6 +4,22 @@ Print Management System is a university-focused web application being built as a
 
 The current codebase is now a full-stack MVP foundation, not only a frontend prototype. It includes a React frontend, a TypeScript/Express backend, PostgreSQL migrations, DB-backed authentication for development, job submission/history, admin management flows, technician flows, logs, queues, groups, printers, and diagnostic printer delivery paths.
 
+## Screenshots
+
+### Application Interface
+
+![Screenshot 1](snapshots/1.png)
+![Screenshot 2](snapshots/2.png)
+![Screenshot 3](snapshots/3.png)
+![Screenshot 4](snapshots/4.png)
+![Screenshot 5](snapshots/5.png)
+![Screenshot 6](snapshots/6.png)
+![Screenshot 7](snapshots/7.png)
+![Screenshot 8](snapshots/8.png)
+![Screenshot 9](snapshots/9.png)
+![Screenshot 10](snapshots/10.png)
+![Screenshot 11](snapshots/11.png)
+
 ## Current State
 
 Implemented at a high level:
